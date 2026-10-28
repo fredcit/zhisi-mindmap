@@ -1,0 +1,2094 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>織思心智圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style id="zhisi-style">
+/* Layout: 全高工作區 — 頂部工具列 / 左側文件列 / 點陣畫布或大綱 / 右側屬性面板 / 底部狀態列 */
+:root{
+  --bg:#eef1f5; --dot:#c9d1dc; --surface:#ffffff; --surface-2:#f6f8fb;
+  --fg:#18202c; --muted:#5b6677; --line:#d6dce5; --accent:#3346c4; --accent-soft:#e3e7fb;
+  --root-bg:#18202c; --root-fg:#ffffff; --on-branch:#ffffff; --danger:#c43c32;
+  --rel:#7a8494; --hit:#ffd84d;
+  --b0:#d9573f; --b1:#1f8a7d; --b2:#c98a10; --b3:#4b5ccf; --b4:#a8468a; --b5:#4a8a35;
+  --shadow:0 6px 24px rgba(24,32,44,.12);
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161c; --dot:#262d37; --surface:#1c222b; --surface-2:#171c23;
+  --fg:#e5e9ef; --muted:#97a2b2; --line:#2c3440; --accent:#8d9bff; --accent-soft:#252c4a;
+  --root-bg:#e5e9ef; --root-fg:#12161c; --on-branch:#10141a; --danger:#f0786c;
+  --rel:#8a95a6; --hit:#b38f12;
+  --b0:#f08a72; --b1:#4fc2b3; --b2:#e8b44a; --b3:#8d9bff; --b4:#d988c1; --b5:#86c76b;
+  --shadow:0 6px 24px rgba(0,0,0,.45); color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#12161c; --dot:#262d37; --surface:#1c222b; --surface-2:#171c23;
+  --fg:#e5e9ef; --muted:#97a2b2; --line:#2c3440; --accent:#8d9bff; --accent-soft:#252c4a;
+  --root-bg:#e5e9ef; --root-fg:#12161c; --on-branch:#10141a; --danger:#f0786c;
+  --rel:#8a95a6; --hit:#b38f12;
+  --b0:#f08a72; --b1:#4fc2b3; --b2:#e8b44a; --b3:#8d9bff; --b4:#d988c1; --b5:#86c76b;
+  --shadow:0 6px 24px rgba(0,0,0,.45); color-scheme:dark;}
+
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);overflow:hidden;margin:0}
+button,input,textarea,select{font:inherit;color:inherit}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:auto minmax(0,1fr) auto}
+
+/* 工具列 */
+.bar{grid-column:1/-1;display:flex;align-items:center;gap:4px;background:var(--surface);border-bottom:1px solid var(--line);
+  padding-block:7px;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));
+  overflow-x:auto;scrollbar-width:none;min-width:0}
+.bar::-webkit-scrollbar{display:none}
+.brand{font-weight:700;font-size:15px;letter-spacing:.04em;white-space:nowrap;padding:0 4px}
+.brand b{color:var(--accent)}
+.title-in{border:1px solid transparent;background:transparent;border-radius:6px;padding:5px 8px;font-size:14px;font-weight:500;
+  width:200px;min-width:110px;flex-shrink:1}
+.title-in:hover{border-color:var(--line)}
+.title-in:focus{outline:none;border-color:var(--accent);background:var(--surface-2)}
+.sep{width:1px;height:22px;background:var(--line);flex:none;margin:0 3px}
+.grow{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;background:transparent;border-radius:7px;
+  padding:6px 8px;font-size:13px;cursor:pointer;white-space:nowrap;flex:none;text-decoration:none}
+.btn:hover{background:var(--surface-2);border-color:var(--line)}
+.btn:focus-visible,.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn:disabled{opacity:.38;cursor:default;background:transparent;border-color:transparent}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.btn.primary{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08);background:var(--accent)}
+.btn.danger{color:var(--danger)}
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:2px;flex:none}
+.seg button{border:0;background:transparent;border-radius:6px;padding:4px 9px;font-size:12.5px;cursor:pointer;color:var(--muted);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:500}
+@media (max-width:1560px){.btn .lbl{display:none}}
+@media (max-width:1100px){.btn .lbl2{display:none}.title-in{width:140px}}
+
+/* 側邊文件列 */
+.side{width:228px;background:var(--surface-2);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.side-head{display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px}
+.side-head h2,.insp h5{font-size:11.5px;letter-spacing:.12em;color:var(--muted);margin:0;font-weight:500}
+.doclist{list-style:none;margin:0;padding:0 8px 12px;overflow-y:auto;flex:1}
+.doc{border-radius:8px;padding:8px 10px;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 6px;align-items:center}
+.doc:hover{background:var(--surface)}
+.doc.on{background:var(--surface);box-shadow:inset 3px 0 0 var(--accent)}
+.doc .t{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.doc .m{grid-column:1;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.doc .x{grid-row:1/3;grid-column:2;opacity:0;border:0;background:transparent;cursor:pointer;color:var(--muted);padding:4px;border-radius:5px}
+.doc:hover .x,.doc.on .x{opacity:1}
+.doc .x:hover{color:var(--danger);background:var(--surface-2)}
+.doc .x svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.confirm{grid-column:1/-1;display:flex;gap:6px;align-items:center;font-size:12px;margin-top:4px}
+.confirm button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer}
+.confirm .del{background:var(--danger);color:#fff;border-color:var(--danger)}
+@media (max-width:760px){.side{position:fixed;z-index:30;top:0;bottom:0;left:0;box-shadow:var(--shadow);
+  padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px)}}
+
+/* 主區：畫布與大綱 */
+.main{position:relative;min-width:0;min-height:0;display:grid}
+.stage{position:relative;overflow:hidden;min-width:0;min-height:0;touch-action:none;cursor:default;
+  background-color:var(--bg);background-image:radial-gradient(var(--dot) 1.1px,transparent 1.2px)}
+.stage:focus{outline:none}
+.stage.panning{cursor:grabbing}
+.stage.relmode,.stage.relmode .node{cursor:crosshair}
+.stage.filedrag{box-shadow:inset 0 0 0 3px var(--accent)}
+svg#svg{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none}
+#world{font-family:var(--font)}
+.node{cursor:pointer}
+.node text{pointer-events:none}
+.selring{fill:none;stroke:var(--accent);stroke-width:2}
+.node:hover .hov{stroke:var(--accent);stroke-opacity:.45}
+.tog,.badge,.sum,.rel{cursor:pointer}
+.tog.exp{opacity:0;transition:opacity .12s}
+.node:hover .tog.exp,.node.sel .tog.exp{opacity:1}
+.badge:hover text{opacity:.7}
+.rel:hover .rline{stroke-width:2.4}
+.drop-in{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4}
+.drop-line{stroke:var(--accent);stroke-width:3;stroke-linecap:round}
+.ghost{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--accent);border-radius:7px;
+  padding:4px 10px;font-size:13px;box-shadow:var(--shadow);opacity:.92;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;z-index:5}
+#editor{position:absolute;z-index:6;resize:none;overflow:hidden;border:2px solid var(--accent);border-radius:7px;background:var(--surface);
+  color:var(--fg);box-shadow:var(--shadow);outline:none;text-align:center;box-sizing:border-box;white-space:pre-wrap;word-break:break-word;margin:0}
+.hint,.toast{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;background:var(--surface);border:1px solid var(--line);
+  border-radius:20px;padding:6px 14px;font-size:12px;color:var(--muted);box-shadow:var(--shadow);pointer-events:none;white-space:nowrap;z-index:7}
+.toast{color:var(--fg);bottom:56px}
+.hint kbd{font-family:var(--mono);font-size:11px;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--fg)}
+@media (max-width:600px){.hint{display:none}}
+.crumb{position:absolute;top:12px;left:12px;z-index:4;display:flex;align-items:center;gap:4px;flex-wrap:wrap;max-width:calc(100% - 300px);
+  background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-size:12.5px;box-shadow:var(--shadow)}
+.crumb button{border:0;background:transparent;border-radius:5px;padding:2px 6px;cursor:pointer;color:var(--accent)}
+.crumb button:hover{background:var(--accent-soft)}
+.crumb .cur{padding:2px 6px;font-weight:500}
+.crumb .x{color:var(--muted)}
+.search{position:absolute;top:12px;right:12px;z-index:4;display:flex;align-items:center;gap:4px;background:var(--surface);
+  border:1px solid var(--line);border-radius:8px;padding:4px 4px 4px 10px;box-shadow:var(--shadow)}
+.search input{border:0;background:transparent;outline:none;width:170px;font-size:13px}
+.search .cnt{font-size:11.5px;color:var(--muted);min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
+.search .btn{padding:4px 5px}
+.search .btn svg{width:15px;height:15px}
+.relhint{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:4;background:var(--accent);color:var(--surface);
+  border-radius:20px;padding:6px 14px;font-size:12.5px;box-shadow:var(--shadow);white-space:nowrap}
+
+/* 大綱 */
+.outline{overflow-y:auto;background:var(--surface);min-height:0}
+.oin{max-width:760px;margin:0 auto;padding-block:28px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.otip{font-size:12px;color:var(--muted);margin:0 0 18px;line-height:1.7}
+.otip kbd{font-family:var(--mono);font-size:11px;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--fg)}
+.orow{display:flex;align-items:center;gap:2px;padding-left:calc(var(--d) * 24px);position:relative}
+.ocar{width:22px;height:26px;border:0;background:transparent;color:var(--muted);cursor:pointer;border-radius:5px;font-size:11px;flex:none;padding:0;display:grid;place-items:center}
+button.ocar:hover{background:var(--surface-2);color:var(--fg)}
+.otext{flex:1;min-width:0;border:0;background:transparent;outline:none;padding:4px 6px;border-radius:5px;font-size:15px;line-height:1.5}
+.otext:focus{background:var(--accent-soft)}
+.oroot .otext{font-size:22px;font-weight:700;padding:6px}
+.odot{width:7px;height:7px;border-radius:50%;flex:none;margin-right:4px}
+
+/* 屬性面板 */
+.insp{width:296px;background:var(--surface);border-left:1px solid var(--line);overflow-y:auto;min-height:0}
+.insp-in{padding:14px 16px 40px;display:flex;flex-direction:column;gap:18px}
+.ih{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ih h3{margin:0;font-size:15px}
+.ipath{font-size:12px;color:var(--muted);margin:-12px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.insp section{display:flex;flex-direction:column;gap:8px}
+.insp h5{display:flex;align-items:center;justify-content:space-between}
+.insp textarea,.insp input[type=text],.insp input[type=url]{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);padding:7px 9px;font-size:13px}
+.insp textarea{min-height:84px;resize:vertical;line-height:1.6}
+.insp textarea:focus,.insp input:focus{outline:none;border-color:var(--accent)}
+.irow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tbtn{min-width:34px;height:32px;border:1px solid var(--line);background:var(--surface-2);border-radius:7px;cursor:pointer;font-size:13px;padding:0 9px}
+.tbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.tbtn:hover{border-color:var(--muted)}
+.sw{width:24px;height:24px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+.sw.def{background:conic-gradient(var(--b0) 0 16%,var(--b1) 0 33%,var(--b2) 0 50%,var(--b3) 0 66%,var(--b4) 0 83%,var(--b5) 0)}
+.mk{width:32px;height:32px;border:1px solid transparent;background:transparent;border-radius:7px;cursor:pointer;font-size:16px;padding:0}
+.mk:hover{background:var(--surface-2)}
+.mk[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.mklabel{font-size:11.5px;color:var(--muted);width:100%}
+.atts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.att{display:grid;grid-template-columns:36px minmax(0,1fr);gap:2px 8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--surface-2)}
+.att .aic{grid-row:1/3;width:36px;height:36px;border-radius:6px;display:grid;place-items:center;font-size:20px;background:var(--surface);overflow:hidden}
+.att .aic img{width:100%;height:100%;object-fit:cover}
+.att .aic.ithumb{font-size:8.5px;color:#fff;cursor:zoom-in;border:0;padding:0}
+.att .aname{border:0;background:transparent;padding:0;text-align:left;font-size:13px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--fg)}
+.att .aname:hover{color:var(--accent);text-decoration:underline}
+.att .ameta{font-size:11px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.att .ameta button{border:0;background:transparent;padding:0;font-size:11px;color:var(--accent);cursor:pointer}
+.att .ameta button.danger{color:var(--danger)}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:12px;text-align:center;font-size:12px;color:var(--muted);line-height:1.6}
+.drop.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.th{border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:8px;cursor:pointer;text-align:left;font-size:12.5px;display:flex;flex-direction:column;gap:6px}
+.th[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.th .dots{display:flex;gap:3px}
+.th .dots i{width:14px;height:14px;border-radius:50%;display:block}
+.iempty{font-size:13px;color:var(--muted);line-height:1.7;margin:0}
+@media (max-width:900px){.insp{position:fixed;z-index:25;left:0;right:0;bottom:0;width:auto;max-height:62vh;border-left:0;border-top:1px solid var(--line);
+  box-shadow:var(--shadow);border-radius:14px 14px 0 0;padding-bottom:env(safe-area-inset-bottom,0px)}}
+
+/* 狀態列 */
+.status{grid-column:1/-1;display:flex;align-items:center;gap:14px;background:var(--surface);border-top:1px solid var(--line);
+  font-size:12px;color:var(--muted);padding-block:4px;
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));
+  padding-bottom:max(4px,env(safe-area-inset-bottom,0px));font-variant-numeric:tabular-nums;min-width:0}
+.status .warn{color:var(--danger)}
+.zoom{display:flex;align-items:center;gap:2px;margin-left:auto}
+.zoom .btn{padding:4px 6px}
+.zoom .btn svg{width:15px;height:15px}
+.zpct{font-family:var(--mono);font-size:11.5px;min-width:44px;text-align:center;color:var(--fg);border:0;background:transparent;cursor:pointer;border-radius:5px;padding:3px}
+.zpct:hover{background:var(--surface-2)}
+@media (max-width:520px){.status .opt{display:none}}
+
+/* 對話框 */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(10,14,20,.42);display:grid;place-items:center;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.panel{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);width:min(600px,100%);max-height:88vh;overflow:auto;padding:20px 22px;border:1px solid var(--line);box-sizing:border-box}
+.panel.wide{width:min(900px,100%)}
+.panel h3{margin:0 0 4px;font-size:17px}
+.panel p.sub{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.65}
+.panel h4{margin:20px 0 8px;font-size:12px;letter-spacing:.1em;color:var(--muted);font-weight:500}
+.panel textarea{width:100%;box-sizing:border-box;height:120px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);
+  font-family:var(--mono);font-size:12px;padding:10px;resize:vertical}
+.panel input[type=text],.panel input[type=url],.panel input[type=number],.panel select{border:1px solid var(--line);border-radius:7px;background:var(--surface-2);padding:6px 9px;font-size:13px}
+.panel input[type=url]{flex:1;min-width:200px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row .btn{border-color:var(--line)}
+.row .btn.primary{border-color:var(--accent)}
+.fmts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.fmt{border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:10px 12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.fmt:hover{border-color:var(--accent)}
+.fmt b{font-size:14px}
+.fmt span{font-size:11.5px;color:var(--muted)}
+.msg{font-size:12.5px;color:var(--muted);min-height:1.2em}
+.msg.err{color:var(--danger)}
+.opts{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:13px;align-items:center}
+.opts label{display:flex;align-items:center;gap:6px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:7px 16px;font-size:13px;margin:0}
+.keys dt{font-family:var(--mono);font-size:12px;white-space:nowrap}
+.keys dt kbd{background:var(--surface-2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px}
+.keys dd{margin:0;color:var(--muted)}
+.close-row{display:flex;justify-content:flex-end;margin-top:18px}
+.lb{display:grid;place-items:center;background:var(--surface-2);border-radius:8px;min-height:200px;overflow:auto;max-height:66vh}
+.lb img{max-width:100%;max-height:64vh;display:block}
+
+/* 嵌入檢視器 */
+.vapp{height:100%;display:grid;grid-template-rows:auto 1fr}
+.vbar{display:flex;align-items:center;gap:8px;background:var(--surface);border-bottom:1px solid var(--line);padding:6px 10px}
+.vtitle{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.vapp .zoom{margin-left:0}
+.vcard{position:absolute;left:12px;bottom:12px;z-index:6;width:min(340px,calc(100% - 24px));max-height:70%;overflow:auto;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:12px 14px;font-size:13px;line-height:1.65;box-sizing:border-box}
+.vcard h4{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;gap:8px}
+.vcard h4 button{border:0;background:transparent;cursor:pointer;color:var(--muted);font-size:16px;line-height:1}
+.vcard .note{white-space:pre-wrap;margin:0 0 8px}
+.vcard a{color:var(--accent);word-break:break-all}
+.vcard ul{margin:4px 0 0;padding-left:18px}
+.vcard img{max-width:100%;border-radius:6px;margin-top:4px}
+/* 附件縮圖、右鍵選單、原地預覽 */
+.thumb{cursor:zoom-in}
+.thumb:hover .tb{stroke:var(--accent);stroke-width:2}
+.ctx{position:absolute;z-index:30;min-width:220px;max-width:calc(100% - 16px);background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:5px;display:flex;flex-direction:column;box-sizing:border-box}
+.ctx button{display:flex;justify-content:space-between;align-items:center;gap:18px;border:0;background:transparent;text-align:left;padding:7px 10px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--fg);white-space:nowrap}
+.ctx button:hover,.ctx button:focus-visible{background:var(--accent-soft);outline:none}
+.ctx button:disabled{opacity:.4;cursor:default;background:transparent}
+.ctx button.danger{color:var(--danger)}
+.ctx button.lead{font-weight:500}
+.ctx kbd{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.ctx .sep{height:1px;background:var(--line);margin:4px 6px}
+.peek-bg{position:absolute;inset:0;z-index:19;background:rgba(10,14,20,.36)}
+.peek{position:absolute;z-index:20;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box}
+.peek.anim{transition:left .26s cubic-bezier(.2,.75,.2,1),top .26s cubic-bezier(.2,.75,.2,1),width .26s cubic-bezier(.2,.75,.2,1),height .26s cubic-bezier(.2,.75,.2,1)}
+.pk-head{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 12px;border-bottom:1px solid var(--line);min-width:0;flex:none}
+.pk-tile{width:32px;height:32px;border-radius:7px;color:#fff;font-size:9.5px;font-weight:700;display:grid;place-items:center;flex:none;letter-spacing:.03em;overflow:hidden}
+.pk-tile img{width:100%;height:100%;object-fit:cover}
+.pk-t{display:flex;flex-direction:column;min-width:0;flex:1}
+.pk-t b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk-t span{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pk-head .btn{border-color:var(--line)}
+.pk-body{flex:1;overflow:auto;background:var(--surface-2);min-height:0;position:relative}
+.pk-load,.pk-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;color:var(--muted);font-size:13px;text-align:center;padding:24px;gap:12px;box-sizing:border-box;line-height:1.7}
+.pk-empty .pk-tile{width:64px;height:64px;font-size:15px;border-radius:12px}
+.pk-img{height:100%;display:grid;place-items:center;padding:16px;box-sizing:border-box}
+.pk-img img{max-width:100%;max-height:100%;cursor:zoom-in;box-shadow:0 2px 14px rgba(0,0,0,.18);background:#fff}
+.pk-img.full{height:auto;place-items:start center}
+.pk-img.full img{max-width:none;max-height:none;cursor:zoom-out}
+.pk-pages{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 12px}
+.pk-pages canvas{background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.16);max-width:100%}
+.pk-note{font-size:12px;color:var(--muted);text-align:center;padding:4px 12px 20px}
+.pk-doc{background:#fff;color:#1b1f27;max-width:780px;margin:20px auto;padding:48px 56px;box-shadow:0 2px 14px rgba(0,0,0,.14);line-height:1.8;font-size:15px;box-sizing:border-box}
+.pk-doc img{max-width:100%;height:auto}
+.pk-doc table{border-collapse:collapse;margin:8px 0}
+.pk-doc td,.pk-doc th{border:1px solid #c9ced8;padding:4px 8px}
+.pk-doc h1,.pk-doc h2,.pk-doc h3{line-height:1.4}
+@media (max-width:700px){.pk-doc{padding:24px 20px;margin:10px}}
+.pk-tabs{display:flex;gap:4px;padding:8px 12px;position:sticky;top:0;left:0;background:var(--surface-2);border-bottom:1px solid var(--line);z-index:1;flex-wrap:wrap}
+.pk-tabs button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer}
+.pk-tabs button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.pk-sheet{padding:12px}
+.pk-sheet table{border-collapse:collapse;background:var(--surface);font-size:13px;font-variant-numeric:tabular-nums}
+.pk-sheet td,.pk-sheet th{border:1px solid var(--line);padding:4px 8px;white-space:nowrap}
+.pk-text{margin:0;padding:18px 22px;font-family:var(--mono);font-size:12.5px;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+.pk-media{display:grid;place-items:center;height:100%;padding:16px;box-sizing:border-box}
+.pk-media video{max-width:100%;max-height:100%}
+.ithumb{width:36px;height:36px;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:8.5px;font-weight:700;overflow:hidden;cursor:zoom-in;border:0;padding:0}
+.ithumb img{width:100%;height:100%;object-fit:cover}
+.vcard .lnk{border:0;background:transparent;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;font-size:13px;text-align:left}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app" id="app">
+  <header class="bar" role="toolbar" aria-label="工具列">
+    <button class="btn" id="bSide" title="文件列表"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <span class="brand">織<b>思</b></span>
+    <input class="title-in" id="title" aria-label="心智圖名稱" spellcheck="false">
+    <span class="sep"></span>
+    <button class="btn" id="bChild" title="新增子主題 (Tab)"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="7" height="6" rx="1.5"/><rect x="15" y="4" width="6" height="5" rx="1.5"/><path d="M10 12h2.5V6.5H15"/><path d="M18 14v6M15 17h6"/></svg><span class="lbl">子主題</span></button>
+    <button class="btn" id="bSib" title="新增同層主題 (Enter)"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="11" height="6" rx="1.5"/><rect x="4" y="13" width="11" height="6" rx="1.5"/><path d="M19 13v6M16 16h6"/></svg><span class="lbl">同層</span></button>
+    <button class="btn" id="bEdit" title="編輯文字 (F2 或雙擊)"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+    <button class="btn danger" id="bDel" title="刪除 (Delete)"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg></button>
+    <span class="sep"></span>
+    <button class="btn" id="bUndo" title="復原 (⌘/Ctrl+Z)"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+    <button class="btn" id="bRedo" title="重做 (⌘/Ctrl+Shift+Z)"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+    <span class="sep"></span>
+    <button class="btn" id="bRel" title="關聯線：連到另一個主題"><svg viewBox="0 0 24 24"><path d="M5 18C6 8 15 6 19 9" stroke-dasharray="3 3"/><path d="M15 6.5l4 2.5-2.5 4"/></svg><span class="lbl">關聯線</span></button>
+    <button class="btn" id="bBound" title="外框：把這個分支框起來"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3" stroke-dasharray="3 2.5"/><path d="M8 12h8"/></svg><span class="lbl">外框</span></button>
+    <button class="btn" id="bSum" title="概要：歸納這個分支"><svg viewBox="0 0 24 24"><path d="M5 4c2 0 2 1 2 3v3l2 2-2 2v3c0 2 0 3-2 3"/><path d="M12 12h8"/></svg><span class="lbl">概要</span></button>
+    <button class="btn" id="bFocus" title="聚焦：只看這個分支"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span class="lbl">聚焦</span></button>
+    <span class="sep"></span>
+    <div class="seg" role="group" aria-label="結構">
+      <button data-layout="mindmap">心智圖</button>
+      <button data-layout="logic">邏輯圖</button>
+      <button data-layout="org">組織圖</button>
+      <button data-layout="fish">魚骨圖</button>
+    </div>
+    <span class="grow"></span>
+    <div class="seg" role="group" aria-label="檢視">
+      <button data-view="map">圖形</button>
+      <button data-view="outline">大綱</button>
+    </div>
+    <button class="btn" id="bSearch" title="搜尋 (⌘/Ctrl+F)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button>
+    <button class="btn" id="bInsp" title="屬性面板"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16M17.5 8.5h1M17.5 12h1"/></svg><span class="lbl2">屬性</span></button>
+    <button class="btn" id="bIO" title="匯出／匯入"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span class="lbl2">匯出</span></button>
+    <button class="btn" id="bEmbed" title="嵌入網頁（iframe）"><svg viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 6l-3 12"/></svg><span class="lbl2">嵌入</span></button>
+    <button class="btn" id="bHelp" title="快捷鍵"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17h.01"/></svg></button>
+  </header>
+
+  <aside class="side" id="side" aria-label="我的心智圖">
+    <div class="side-head"><h2>我的心智圖</h2>
+      <button class="btn" id="bNew" title="新增心智圖"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>新增</span></button></div>
+    <ul class="doclist" id="docs"></ul>
+  </aside>
+
+  <div class="main" id="main">
+    <div class="stage" id="stage">
+      <svg id="svg" aria-label="心智圖畫布"></svg>
+      <textarea id="editor" hidden spellcheck="false" aria-label="編輯主題文字"></textarea>
+      <div class="ghost" id="ghost" hidden></div>
+      <div class="crumb" id="crumb" hidden></div>
+      <div class="relhint" id="relhint" hidden>點選要連到的主題　Esc 取消</div>
+      <div class="search" id="search" hidden>
+        <input id="sQ" placeholder="搜尋主題、備註、附件名稱" aria-label="搜尋">
+        <span class="cnt" id="sCount"></span>
+        <button class="btn" id="sPrev" title="上一筆"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+        <button class="btn" id="sNext" title="下一筆"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+        <button class="btn" id="sClose" title="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div class="hint" id="hint"><kbd>Tab</kbd> 子主題　<kbd>Enter</kbd> 同層　<kbd>F2</kbd> 編輯　<kbd>Space</kbd> 收合　在主題上按右鍵可加入附件</div>
+      <div class="toast" id="toast" hidden></div>
+    </div>
+    <div class="outline" id="outline" hidden></div>
+  </div>
+
+  <aside class="insp" id="insp" hidden aria-label="屬性面板"></aside>
+
+  <footer class="status">
+    <span id="stCount">—</span>
+    <span id="stDepth" class="opt">—</span>
+    <span id="stFiles" class="opt"></span>
+    <span id="stSave">—</span>
+    <div class="zoom">
+      <button class="btn" id="zOut" title="縮小"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <button class="zpct" id="zPct" title="重設為 100%">100%</button>
+      <button class="btn" id="zIn" title="放大"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="btn" id="zFit" title="符合畫面"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+  </footer>
+</div>
+
+<div class="modal" id="mIO" hidden>
+  <div class="panel" role="dialog" aria-labelledby="ioT">
+    <h3 id="ioT">匯出／匯入</h3>
+    <p class="sub">圖片、SVG 與 PDF 會照畫面上目前的展開狀態與配色輸出。JSON 是完整備份，可以搬到另一台電腦。</p>
+    <h4>匯出</h4>
+    <div class="fmts">
+      <button class="fmt" data-exp="png"><b>PNG 圖片</b><span>高解析度，可貼進簡報</span></button>
+      <button class="fmt" data-exp="svg"><b>SVG 向量圖</b><span>放大不失真</span></button>
+      <button class="fmt" data-exp="pdf"><b>PDF</b><span>單頁，方便列印分享</span></button>
+      <button class="fmt" data-exp="md"><b>Markdown 大綱</b><span>含備註與連結</span></button>
+      <button class="fmt" data-exp="json"><b>JSON 備份</b><span>完整結構</span></button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="chk"><input type="checkbox" id="ioWithFiles" checked> JSON 備份包含附件檔案</label>
+    </div>
+    <div class="row" style="margin-top:6px"><span class="msg" id="ioMsg1"></span></div>
+    <textarea id="ioOut" hidden readonly aria-label="匯出內容"></textarea>
+    <h4>匯入</h4>
+    <p class="sub">可匯入織思的 JSON 備份，或 Markdown、縮排文字大綱（每行一個主題，用縮排或 # 標題表示層級）。</p>
+    <div class="row" style="margin-bottom:8px">
+      <label class="btn" for="ioFile" style="border-color:var(--line)">選擇檔案…</label>
+      <input type="file" id="ioFile" accept=".json,.md,.markdown,.txt,application/json,text/plain,text/markdown" hidden>
+      <span class="msg">或把內容貼在下方</span>
+    </div>
+    <textarea id="ioText" placeholder="# 中心主題&#10;- 分支一&#10;  - 子主題&#10;- 分支二"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" id="ioImport">匯入為新的心智圖</button>
+      <span class="msg" id="ioMsg2"></span>
+    </div>
+    <div class="close-row"><button class="btn" data-close>關閉</button></div>
+  </div>
+</div>
+
+<div class="modal" id="mEmbed" hidden>
+  <div class="panel" role="dialog" aria-labelledby="emT">
+    <h3 id="emT">嵌入網頁（iframe）</h3>
+    <p class="sub">產生一份唯讀的檢視器：讀者可以縮放、平移、收合分支，點主題可看備註、連結與附件，但不能修改。內容是目前這份心智圖的快照，之後修改需要重新產生。</p>
+    <div class="opts">
+      <label>高度 <input type="number" id="eH" value="520" min="200" max="3000" step="20" style="width:80px"> px</label>
+      <label>外觀 <select id="eTheme"><option value="auto">跟隨讀者系統</option><option value="light">固定淺色</option><option value="dark">固定深色</option></select></label>
+      <label><input type="checkbox" id="eCollapse" checked> 讀者可收合分支</label>
+      <label><input type="checkbox" id="eFiles" checked> 內嵌附件與圖片</label>
+    </div>
+    <h4>方法一：直接貼上嵌入碼</h4>
+    <p class="sub">內容全部包在嵌入碼裡，不用另外上傳檔案。適合部落格、Google 協作平台、Moodle 等可以貼 HTML 的地方。</p>
+    <div class="row"><button class="btn primary" id="eCopySrc">複製嵌入碼</button><span class="msg" id="eMsg1"></span></div>
+    <h4>方法二：上傳檔案後用網址嵌入</h4>
+    <p class="sub">先下載檢視器 HTML，放到你的網站、GitHub Pages 或其他可公開網址的空間，再填入網址產生嵌入碼。Notion 這類只接受網址的地方要用這個方法。</p>
+    <div class="row"><button class="btn" id="eDl">下載檢視器 HTML</button><span class="msg" id="eMsg2"></span></div>
+    <div class="row" style="margin-top:8px"><input type="url" id="eUrl" placeholder="https://你的網站/心智圖.html" aria-label="檢視器網址"><button class="btn" id="eCopyUrl">複製網址嵌入碼</button></div>
+    <textarea id="eCode" readonly style="margin-top:12px" aria-label="嵌入碼"></textarea>
+    <div class="close-row"><button class="btn" data-close>關閉</button></div>
+  </div>
+</div>
+
+<div class="modal" id="mHelp" hidden>
+  <div class="panel" role="dialog" aria-labelledby="hT">
+    <h3 id="hT">快捷鍵與操作</h3>
+    <p class="sub">選取主題後直接打字，就會取代成新文字。Mac 用 ⌘，Windows 用 Ctrl。</p>
+    <dl class="keys">
+      <dt><kbd>Tab</kbd></dt><dd>新增子主題</dd>
+      <dt><kbd>Enter</kbd></dt><dd>新增同層主題</dd>
+      <dt><kbd>F2</kbd>／雙擊</dt><dd>編輯文字（編輯中 Shift+Enter 換行）</dd>
+      <dt><kbd>Delete</kbd></dt><dd>刪除主題或選取的關聯線</dd>
+      <dt><kbd>Space</kbd></dt><dd>收合／展開分支</dd>
+      <dt><kbd>↑ ↓ ← →</kbd></dt><dd>移動選取</dd>
+      <dt><kbd>⌘ Z</kbd>／<kbd>⌘ ⇧ Z</kbd></dt><dd>復原／重做</dd>
+      <dt><kbd>⌘ C</kbd> <kbd>⌘ X</kbd> <kbd>⌘ V</kbd></dt><dd>複製、剪下、貼上整個分支；貼上多行文字會變成子主題</dd>
+      <dt><kbd>⌘ B</kbd>／<kbd>⌘ I</kbd></dt><dd>粗體／斜體</dd>
+      <dt><kbd>⌘ F</kbd></dt><dd>搜尋主題、備註與附件名稱</dd>
+      <dt><kbd>⌘ +</kbd> <kbd>⌘ −</kbd> <kbd>⌘ 0</kbd></dt><dd>放大、縮小、符合畫面</dd>
+      <dt><kbd>Esc</kbd></dt><dd>取消選取、離開聚焦模式</dd>
+      <dt>右鍵選單</dt><dd>在主題上按右鍵（觸控螢幕長按）可加入附件與執行常用動作；鍵盤可按 Shift+F10</dd>
+      <dt>附件縮圖</dt><dd>附件會以縮圖顯示在主題下方，點縮圖就地放大預覽；預覽中用 ← → 切換、Esc 關閉</dd>
+      <dt>拖放與貼上</dt><dd>也可以把檔案拖到主題上，或複製圖片後在選取的主題上按 ⌘ V</dd>
+    </dl>
+    <div class="close-row"><button class="btn" data-close>關閉</button></div>
+  </div>
+</div>
+
+<script id="zhisi-app">
+(()=>{
+"use strict";
+/* ================= 基本工具 ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const on=(t,ev,fn,opt)=>{const el=typeof t==="string"?$(t):t;if(el)el.addEventListener(ev,fn,opt)};
+const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const pad2=n=>String(n).padStart(2,"0");
+const isMac=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent), MK=isMac?"⌘":"Ctrl+";
+const FAMILY='"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif';
+const embedEl=document.getElementById("embed-data");
+const VIEWER=!!embedEl;
+let EMBED=null;
+if(VIEWER){try{EMBED=JSON.parse(embedEl.textContent)}catch(e){EMBED=null}}
+const VOPT=(EMBED&&EMBED.opts)||{};
+const IN_ARTIFACT=!!(window.claude&&window.claude.use);
+
+const SVG_INNER='<defs><marker id="zsArrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="var(--rel)"/></marker></defs><g id="world"><g id="bounds"></g><g id="edges"></g><g id="nodes"></g><g id="sums"></g><g id="rels"></g><g id="overlay"></g></g>';
+const ZOOM_HTML='<div class="zoom"><button class="btn" id="zOut" title="縮小"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><button class="zpct" id="zPct" title="重設為 100%">100%</button><button class="btn" id="zIn" title="放大"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button class="btn" id="zFit" title="符合畫面"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>';
+const PEEK_HTML='<div class="peek-bg" id="peekBg" hidden></div><div class="peek" id="peek" hidden role="dialog" aria-label="附件預覽"><div class="pk-head"><span class="pk-tile" id="pkTile"></span><div class="pk-t"><b id="pkName"></b><span id="pkMeta"></span></div><button class="btn" id="pkPrev" title="上一個附件 (←)"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><button class="btn" id="pkNext" title="下一個附件 (→)"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button><button class="btn" id="pkDl" title="下載"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span class="lbl2">下載</span></button><button class="btn" id="pkClose" title="關閉 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="pk-body" id="pkBody"></div></div>';
+const CTX_HTML='<div class="ctx" id="ctx" hidden role="menu"></div><input type="file" id="ctxFile" multiple hidden>';
+const VIEWER_MARKUP='<div class="vapp"><header class="vbar"><span class="vtitle" id="vTitle"></span><span class="grow"></span>'+ZOOM_HTML+'</header><div class="stage" id="stage"><svg id="svg" aria-label="心智圖"></svg><div class="crumb" id="crumb" hidden></div><div class="vcard" id="vcard" hidden></div></div></div>';
+
+/* ================= 配色主題 ================= */
+const THEMES={
+  classic:{name:"經典",L:["#d9573f","#1f8a7d","#c98a10","#4b5ccf","#a8468a","#4a8a35"],D:["#f08a72","#4fc2b3","#e8b44a","#8d9bff","#d988c1","#86c76b"]},
+  ocean:{name:"海洋",L:["#1f6fae","#13897f","#3b55c4","#2a8a5c","#6a4fc0","#0f7d99"],D:["#6fb1e8","#4cc7b9","#8ea0ff","#6fcf9b","#ad97f2","#5cc4dd"]},
+  forest:{name:"森林",L:["#4b7a2a","#9a6b16","#2d7a58","#a2512e","#6a7f1d","#2f6b6b"],D:["#8fc46a","#e0ad55","#62c49a","#e78f6a","#b3c75a","#6db6b6"]},
+  berry:{name:"莓果",L:["#b53a6c","#7a3fb3","#cf5a39","#962e50","#c0559a","#5d4cb8"],D:["#ee7fa9","#b994f0","#f19676","#e07a96","#eb93cc","#a39af2"]},
+  ink:{name:"墨色",L:["#2f3846","#4d5768","#3a4454","#5d6779","#424c5c","#566173"],D:["#cfd6e0","#aeb8c6","#c1c9d4","#9aa5b4","#b8c1cd","#a6b0be"]},
+};
+const SWATCH=["#d9573f","#e07b1f","#c98a10","#4a8a35","#1f8a7d","#1f6fae","#4b5ccf","#7a3fb3","#b53a6c","#5d6779"];
+const MARKS=[
+  {g:"pri",name:"優先順序",ex:true,items:["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣"]},
+  {g:"st",name:"狀態",ex:true,items:["✅","⏳","❓","❗","❌"]},
+  {g:"sym",name:"符號",ex:false,items:["⭐","🚩","💡","📌","🎯","❤️","👍","🔥"]},
+];
+const themeStyle=document.createElement("style");document.head.appendChild(themeStyle);
+let themeApplied=null;
+function applyTheme(){
+  const t=THEMES[doc.theme]||THEMES.classic, decl=a=>a.map((c,i)=>`--b${i}:${c}`).join(";");
+  themeStyle.textContent=`:root{${decl(t.L)}}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${decl(t.D)}}}:root[data-theme="dark"]{${decl(t.D)}}`;
+  themeApplied=doc.theme;
+}
+
+/* ================= 儲存層 ================= */
+const KEY_INDEX="zhisi.index", KEY_DOC="zhisi.doc.", KEY_LAST="zhisi.last", KEY_INSP="zhisi.insp";
+const store={
+  get(k){if(VIEWER)return null;try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
+  set(k,v){if(VIEWER)return true;try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},
+  del(k){try{localStorage.removeItem(k)}catch(e){}}
+};
+// 附件：存在瀏覽器的 IndexedDB（可存大型檔案），失敗時暫存在記憶體
+const memFiles=new Map(); let idbOK=true; let dbp=null;
+function idbOpen(){
+  if(dbp) return dbp;
+  dbp=new Promise((res,rej)=>{try{const r=indexedDB.open("zhisi-files",1);r.onupgradeneeded=()=>r.result.createObjectStore("f");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
+  return dbp;
+}
+async function idbDo(mode,fn){const db=await idbOpen();return new Promise((res,rej)=>{const t=db.transaction("f",mode);const r=fn(t.objectStore("f"));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+async function putBlob(id,blob){try{await idbDo("readwrite",s=>s.put(blob,id))}catch(e){idbOK=false;memFiles.set(id,blob)}}
+async function idbGet(k){if(memFiles.has(k))return memFiles.get(k);try{return (await idbDo("readonly",s=>s.get(k)))||null}catch(e){return null}}
+async function idbPut(k,v){try{await idbDo("readwrite",s=>s.put(v,k))}catch(e){memFiles.set(k,v)}}
+async function getBlob(id){
+  if(VIEWER){const d=EMBED&&EMBED.files&&EMBED.files[id];return d?dataURLToBlob(d):null}
+  if(memFiles.has(id)) return memFiles.get(id);
+  try{return (await idbDo("readonly",s=>s.get(id)))||null}catch(e){return null}
+}
+const urlCache=new Map(), urlPending=new Set(), missing=new Set();
+function fileUrl(id){
+  if(urlCache.has(id)) return urlCache.get(id);
+  if(VIEWER){const d=EMBED&&EMBED.files&&EMBED.files[id];if(d){urlCache.set(id,d);return d}return null}
+  if(!urlPending.has(id)&&!missing.has(id)){
+    urlPending.add(id);
+    getBlob(id).then(b=>{urlPending.delete(id);if(b){urlCache.set(id,URL.createObjectURL(b));render();renderInspector(true)}else{missing.add(id);render()}});
+  }
+  return null;
+}
+function dataURLToBlob(d){
+  const i=d.indexOf(","), meta=d.slice(5,i), bin=atob(d.slice(i+1)), u=new Uint8Array(bin.length);
+  for(let k=0;k<bin.length;k++) u[k]=bin.charCodeAt(k);
+  return new Blob([u],{type:meta.split(";")[0]});
+}
+const blobToDataURL=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(b)});
+
+/* ================= 資料 ================= */
+function N(text,children=[]){return{id:uid(),text,children,collapsed:false}}
+function sampleDoc(){
+  const r=N("心智圖軟體",[
+    N("基本操作",[N("快捷鍵新增主題"),N("拖曳搬移節點"),N("收合／展開"),N("復原／重做")]),
+    N("版面與樣式",[N("心智圖・邏輯圖・組織圖・魚骨圖"),N("分支配色主題"),N("深色模式")]),
+    N("思考整理",[N("外框與概要"),N("關聯線"),N("聚焦模式"),N("大綱檢視")]),
+    N("檔案與匯出",[N("JSON 備份"),N("PNG／SVG／PDF"),N("Markdown 大綱")]),
+    N("iframe 嵌入",[N("唯讀檢視器 HTML"),N("srcdoc 嵌入碼"),N("網址嵌入碼")])
+  ]);
+  const [a,,c,d,e]=r.children;
+  a.icons=["1️⃣"]; a.note="選取主題後直接打字即可取代文字。\n把 Word、PDF、圖片拖到主題上可以加入附件。";
+  c.boundary={label:"第二版重點"}; c.children[1].icons=["💡"];
+  d.summary={text:"隨時可備份"};
+  e.link="https://developer.mozilla.org/zh-TW/docs/Web/HTML/Element/iframe";
+  return{id:uid(),title:"範例：心智圖軟體規劃",layout:"mindmap",theme:"classic",updated:Date.now(),root:r,
+    rels:[{id:uid(),from:c.children[1].id,to:a.children[1].id,label:"都靠拖曳"}]};
+}
+function blankDoc(){return{id:uid(),title:"未命名心智圖",layout:"mindmap",theme:"classic",updated:Date.now(),root:N("中心主題"),rels:[]}}
+const LAYOUTS=["mindmap","logic","org","fish"];
+function fixDoc(d){if(!LAYOUTS.includes(d.layout))d.layout="mindmap";if(!THEMES[d.theme])d.theme="classic";if(!Array.isArray(d.rels))d.rels=[];return d}
+
+/* ================= 狀態 ================= */
+let index=store.get(KEY_INDEX)||[];
+let doc=null, selId=null, selRel=null, focusId=null, relFrom=null;
+let undoStack=[], redoStack=[], clip=null, clipText=null;
+const view={x:0,y:0,k:1};
+let P=new Map(), INFO=new Map(), EX=[];
+let saveTimer=null, saveOK=true, exporting=false, exportURLs=new Map();
+let viewMode="map", inspOpen=false, hits=[], hitIdx=-1;
+let downloads=null;
+
+/* ================= 量測 ================= */
+const ctx=document.createElement("canvas").getContext("2d");
+function styleFor(depth,boxed){
+  if(depth===0) return{fs:21,wt:700,px:26,py:15,max:300};
+  if(depth===1) return{fs:16,wt:500,px:18,py:9,max:260};
+  return boxed?{fs:14,wt:400,px:12,py:6,max:220}:{fs:14,wt:400,px:6,py:5,max:240};
+}
+const TOKEN=/[⺀-鿿豈-﫿＀-￯　-〿]|[^\s⺀-鿿豈-﫿＀-￯　-〿]+|\s+/g;
+function wrap(str,max){
+  const out=[];
+  for(const hard of str.split("\n")){
+    const toks=hard.match(TOKEN)||[""]; let line="";
+    for(const t of toks){
+      const test=line+t;
+      if(ctx.measureText(test).width<=max) line=test;
+      else if(!line.trim()){for(const ch of t){if(ctx.measureText(line+ch).width>max&&line){out.push(line);line=ch}else line+=ch}}
+      else{out.push(line.replace(/\s+$/,""));line=t.trim()?t:"";
+        if(ctx.measureText(line).width>max){let l2="";for(const ch of line){if(ctx.measureText(l2+ch).width>max&&l2){out.push(l2);l2=ch}else l2+=ch}line=l2}}
+    }
+    out.push(line);
+  }
+  return out;
+}
+const dispText=n=>(n.icons&&n.icons.length?n.icons.join("")+" ":"")+n.text;
+function badgesOf(n){
+  const b=[];
+  if(n.note&&n.note.trim()) b.push({k:"note",t:"📝",w:18});
+  if(n.link) b.push({k:"link",t:"🔗",w:18});
+  return b;
+}
+function imgOf(n){
+  if(!n.image) return null; const f=(n.files||[]).find(x=>x.id===n.image); if(!f) return null;
+  const w=f.iw||160,h=f.ih||120,s=Math.min(1,200/w,150/h);
+  return{f,w:Math.round(w*s),h:Math.round(h*s)};
+}
+const TH=46, TG=6, TMAX=5;
+function thumbsOf(n){
+  const fs=(n.files||[]).filter(f=>f.id!==n.image); if(!fs.length) return null;
+  let list=fs,more=0; if(fs.length>TMAX){list=fs.slice(0,TMAX-1);more=fs.length-list.length}
+  const k=list.length+(more?1:0); return{list,more,all:fs,w:k*TH+(k-1)*TG};
+}
+const mcache=new Map();
+function measure(n,depth,boxed){
+  const st=n.style||{}, txt=dispText(n), b=badgesOf(n), im=imgOf(n), tb=thumbsOf(n);
+  const key=[depth,boxed?1:0,st.bold?1:0,st.italic?1:0,b.map(x=>x.t).join(""),im?im.w+"x"+im.h:"",tb?tb.all.map(f=>f.id).join(","):"",txt].join("|");
+  const hit=mcache.get(key); if(hit) return Object.assign({},hit,{img:im,thumbs:tb});
+  const s=styleFor(depth,boxed), wt=st.bold?700:s.wt;
+  ctx.font=`${st.italic?"italic ":""}${wt} ${s.fs}px ${FAMILY}`;
+  const lines=wrap(txt||" ",s.max);
+  const tw=Math.ceil(Math.max(...lines.map(l=>ctx.measureText(l).width)));
+  const bw=b.length?b.reduce((a,x)=>a+x.w,0)+(b.length-1)*2:0;
+  const lh=Math.round(s.fs*1.45), th=lines.length*lh;
+  const rowW=tw+(bw?bw+6:0), cw=Math.max(rowW,im?im.w:0,tb?tb.w:0);
+  const m={lines,lh,fs:s.fs,wt,it:!!st.italic,px:s.px,py:s.py,tw,bw,th,badges:b,img:im,thumbs:tb,
+    w:Math.max(cw+s.px*2,depth===0?90:36), h:s.py*2+th+(im?im.h+8:0)+(tb?TH+8:0)};
+  if(mcache.size>5000) mcache.clear();
+  mcache.set(key,m); return m;
+}
+function measureLabel(t){ctx.font=`500 13px ${FAMILY}`;return{w:Math.ceil(ctx.measureText(t||" ").width)+20,h:26}}
+
+/* ================= 索引 ================= */
+function buildIndex(){
+  INFO=new Map();
+  (function walk(n,parent,depth,color,i){
+    let c=null;
+    if(depth===1) c=(n.style&&n.style.color)||`var(--b${i%6})`;
+    else if(depth>1) c=(n.style&&n.style.color)||color;
+    INFO.set(n.id,{node:n,parent,depth,color:c});
+    n.children.forEach((k,j)=>walk(k,n,depth+1,c,j));
+  })(doc.root,null,0,null,0);
+}
+const get=id=>{const i=INFO.get(id);return i?i.node:null};
+const kids=n=>n.collapsed?[]:n.children;
+const colOf=id=>{const i=INFO.get(id);return(i&&i.color)||"var(--accent)"};
+function countAll(n){let c=1;n.children.forEach(k=>c+=countAll(k));return c}
+function countFiles(n){let c=(n.files||[]).length;n.children.forEach(k=>c+=countFiles(k));return c}
+function maxDepth(n,d=0){return n.children.reduce((m,k)=>Math.max(m,maxDepth(k,d+1)),d)}
+function inSubtree(root,id){if(!root)return false;if(root.id===id)return true;return root.children.some(c=>inSubtree(c,id))}
+
+/* ================= 排版 ================= */
+function layout(){
+  P=new Map(); EX=[];
+  const R=(focusId&&get(focusId))||doc.root;
+  if(doc.layout==="org") layoutOrg(R);
+  else if(doc.layout==="fish") layoutFish(R);
+  else layoutH(R,doc.layout==="mindmap");
+}
+function layoutH(R,both){
+  const S=new Map(), gapH=d=>d===0?56:30, gapV=d=>d===1?20:10;
+  const size=(n,d)=>{const m=measure(n,d,d<=1),ks=kids(n);let sh=m.h;
+    if(ks.length){let sum=0;ks.forEach(k=>sum+=size(k,d+1));sum+=gapV(d+1)*(ks.length-1);sh=Math.max(m.h,sum)}
+    S.set(n.id,{m,sh});return sh};
+  const place=(n,d,edgeX,yTop,dir)=>{
+    const {m,sh}=S.get(n.id),cy=yTop+sh/2,x=dir>0?edgeX:edgeX-m.w;
+    P.set(n.id,{x,y:cy-m.h/2,w:m.w,h:m.h,m,depth:d,color:colOf(n.id),dir,boxed:d<=1});
+    const ks=kids(n);if(!ks.length)return;
+    const total=ks.reduce((a,k)=>a+S.get(k.id).sh,0)+gapV(d+1)*(ks.length-1);
+    let y=cy-total/2;const cx=dir>0?x+m.w+gapH(d):x-gapH(d);
+    ks.forEach(k=>{place(k,d+1,cx,y,dir);y+=S.get(k.id).sh+gapV(d+1)});
+  };
+  const m0=measure(R,0,true), ks=kids(R);
+  ks.forEach(k=>size(k,1));
+  P.set(R.id,{x:-m0.w/2,y:-m0.h/2,w:m0.w,h:m0.h,m:m0,depth:0,color:colOf(R.id),dir:1,boxed:true});
+  let right=ks,left=[];
+  if(both&&ks.length>1){
+    const tot=ks.reduce((a,k)=>a+S.get(k.id).sh,0);let acc=0,cut=ks.length;
+    for(let i=0;i<ks.length;i++){acc+=S.get(ks[i].id).sh;if(acc>=tot/2){cut=i+1;break}}
+    right=ks.slice(0,cut);left=ks.slice(cut);
+  }
+  const col=(list,dir)=>{if(!list.length)return;
+    const total=list.reduce((a,k)=>a+S.get(k.id).sh,0)+gapV(1)*(list.length-1);let y=-total/2;
+    list.forEach(k=>{place(k,1,dir>0?m0.w/2+gapH(0):-m0.w/2-gapH(0),y,dir);y+=S.get(k.id).sh+gapV(1)})};
+  col(right,1);col(left,-1);
+}
+// 縮排樹（組織圖第二層起、魚骨圖第三層起共用）
+const IND=26, GV=10;
+const sumW=n=>n.summary?30+measureLabel(n.summary.text).w:0;
+function tSize(n,d,S){
+  const m=measure(n,d,true),ks=kids(n);let sw=m.w,sh=m.h;
+  if(ks.length){let mw=0;for(const k of ks){const r=tSize(k,d+1,S);mw=Math.max(mw,r.sw);sh+=GV+r.sh}sw=Math.max(sw,IND+mw)}
+  sw+=sumW(n);const r={m,sw,sh};S.set(n.id,r);return r;
+}
+function tPlace(n,d,xl,y,S){
+  const {m}=S.get(n.id);
+  P.set(n.id,{x:xl,y,w:m.w,h:m.h,m,depth:d,color:colOf(n.id),dir:1,boxed:true,tree:true});
+  let cy=y+m.h+GV;for(const k of kids(n)){tPlace(k,d+1,xl+IND,cy,S);cy+=S.get(k.id).sh+GV}
+}
+function layoutOrg(R){
+  const S=new Map(),GX=30,GY=54,m0=measure(R,0,true),ks=kids(R);
+  ks.forEach(k=>tSize(k,1,S));
+  const total=ks.reduce((a,k)=>a+S.get(k.id).sw,0)+GX*Math.max(0,ks.length-1);
+  const sw=Math.max(m0.w,total);
+  P.set(R.id,{x:-m0.w/2,y:-m0.h/2,w:m0.w,h:m0.h,m:m0,depth:0,color:colOf(R.id),dir:1,boxed:true});
+  let cx=-sw/2+(sw-total)/2;
+  ks.forEach(k=>{tPlace(k,1,cx,m0.h/2+GY,S);cx+=S.get(k.id).sw+GX});
+}
+function layoutFish(R){
+  const S=new Map(),GAP=34,GX=26,m0=measure(R,0,true);
+  P.set(R.id,{x:0,y:-m0.h/2,w:m0.w,h:m0.h,m:m0,depth:0,color:colOf(R.id),dir:1,boxed:true});
+  const cur=[-44,-44];
+  kids(R).forEach((c,i)=>{
+    const top=i%2===0,si=top?0:1,m1=measure(c,1,true),ks=kids(c);
+    let H=0,mw=0;ks.forEach(k=>{const r=tSize(k,2,S);H+=r.sh+GV;mw=Math.max(mw,r.sw)});
+    const Sl=Math.max(30,(H+GAP)*.5);
+    const colW=Math.max(m1.w,16+Sl+14+mw)+sumW(c);
+    const xl=cur[si]-colW, by=top?-GAP-H-m1.h:GAP+H, bx=xl+16, y0=top?by+m1.h:by;
+    P.set(c.id,{x:xl,y:by,w:m1.w,h:m1.h,m:m1,depth:1,color:colOf(c.id),dir:1,boxed:true,inPath:"",togAt:{x:bx,y:top?by+m1.h+9:by-9}});
+    EX.push({d:`M${bx},${y0}L${bx+Sl},0`,c:colOf(c.id),w:2.4});
+    let yy=top?by+m1.h+GV:GAP;
+    ks.forEach(k=>{const r=S.get(k.id),ay=yy+r.m.h/2,t=(ay-y0)/(0-y0),xb=bx+Sl*t,kx=xb+14;
+      tPlace(k,2,kx,yy,S);P.get(k.id).inPath=`M${xb},${ay}H${kx}`;yy+=r.sh+GV});
+    cur[si]=xl-GX;
+  });
+  EX.unshift({d:`M${Math.min(cur[0],cur[1])+GX-16},0H0`,c:"var(--fg)",w:3.2});
+}
+
+/* ================= 繪製 ================= */
+const vertical=()=>doc.layout==="org";
+function anchorOut(p,q){
+  if(vertical()) return{x:p.x+p.w/2,y:p.y+p.h};
+  if(p.depth===0) return{x:p.x+p.w/2,y:p.y+p.h/2};
+  return{x:q.dir>0?p.x+p.w:p.x,y:p.boxed?p.y+p.h/2:p.y+p.h};
+}
+function anchorIn(q){
+  if(vertical()) return{x:q.x+q.w/2,y:q.y};
+  return{x:q.dir>0?q.x:q.x+q.w,y:q.boxed?q.y+q.h/2:q.y+q.h};
+}
+function edgePath(s,e){
+  if(vertical()){const my=(s.y+e.y)/2;return`M${s.x},${s.y}C${s.x},${my} ${e.x},${my} ${e.x},${e.y}`}
+  const mx=s.x+(e.x-s.x)*.5;return`M${s.x},${s.y}C${mx},${s.y} ${mx},${e.y} ${e.x},${e.y}`;
+}
+const pathEl=(d,c,w,extra="")=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"${extra}/>`;
+function render(){
+  if(!doc) return;
+  buildIndex();
+  doc.rels=(doc.rels||[]).filter(r=>INFO.has(r.from)&&INFO.has(r.to)&&r.from!==r.to);
+  if(selId&&!INFO.has(selId)) selId=null;
+  if(selRel&&!doc.rels.some(r=>r.id===selRel)) selRel=null;
+  if(focusId&&(!INFO.has(focusId)||focusId===doc.root.id)) focusId=null;
+  if(themeApplied!==doc.theme) applyTheme();
+  layout();
+  let E="",NS="";
+  for(const [id,p] of P){
+    const n=get(id);
+    for(const k of kids(n)){
+      const q=P.get(k.id); if(!q) continue;
+      if(q.inPath!==undefined){if(q.inPath)E+=pathEl(q.inPath,q.color,1.5);continue}
+      const w=p.depth===0?3:p.depth===1?2:1.5;
+      let d;
+      if(p.tree){const sx=p.x+14,sy=p.y+p.h,ey=q.y+q.h/2;d=`M${sx},${sy}V${ey-6}Q${sx},${ey} ${sx+6},${ey}H${q.x}`}
+      else d=edgePath(anchorOut(p,q),anchorIn(q));
+      E+=pathEl(d,q.color,w);
+    }
+    NS+=nodeSVG(n,p);
+  }
+  for(const x of EX) E+=pathEl(x.d,x.c,x.w);
+  $("#edges").innerHTML=E; $("#nodes").innerHTML=NS;
+  $("#bounds").innerHTML=boundsSVG(); $("#sums").innerHTML=sumsSVG(); $("#rels").innerHTML=relsSVG();
+  applyView(); updateUI(); renderCrumb();
+  if(!exporting) renderInspector(false);
+}
+function subBox(n){
+  const p=P.get(n.id); if(!p) return null;
+  let a=p.x,b=p.y,c=p.x+p.w,d=p.y+p.h;
+  for(const k of kids(n)){const s=subBox(k);if(s){a=Math.min(a,s.x);b=Math.min(b,s.y);c=Math.max(c,s.x+s.w);d=Math.max(d,s.y+s.h)}}
+  return{x:a,y:b,w:c-a,h:d-b};
+}
+function boundsSVG(){
+  let s="";
+  for(const [id,p] of P){
+    const n=get(id); if(!n.boundary||p.depth===0) continue;
+    const b=subBox(n), pd=9, col=p.color||"var(--accent)";
+    s+=`<g class="bound"><rect x="${b.x-pd}" y="${b.y-pd}" width="${b.w+pd*2}" height="${b.h+pd*2}" rx="12" fill="${col}" fill-opacity="0.07" stroke="${col}" stroke-opacity="0.75" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+    if(n.boundary.label){const L=measureLabel(n.boundary.label),lx=b.x-pd+12,ly=b.y-pd-L.h/2;
+      s+=`<rect x="${lx}" y="${ly}" width="${L.w}" height="${L.h}" rx="13" fill="${col}"/><text x="${lx+L.w/2}" y="${ly+L.h/2}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="var(--on-branch)">${esc(n.boundary.label)}</text>`}
+    s+="</g>";
+  }
+  return s;
+}
+function sumsSVG(){
+  let s="";
+  for(const [id,p] of P){
+    const n=get(id); if(!n.summary) continue;
+    const b=subBox(n), dir=(p.tree||p.depth===0||doc.layout==="fish")?1:p.dir, col=p.color||"var(--fg)";
+    let top=b.y,bot=b.y+b.h; if(bot-top<30){const m=(top+bot)/2;top=m-15;bot=m+15}
+    const x0=dir>0?b.x+b.w+10:b.x-10, k=8*dir, mid=(top+bot)/2;
+    const d=`M${x0},${top}Q${x0+k},${top} ${x0+k},${top+8}V${mid-8}Q${x0+k},${mid} ${x0+2*k},${mid}Q${x0+k},${mid} ${x0+k},${mid+8}V${bot-8}Q${x0+k},${bot} ${x0},${bot}`;
+    const L=measureLabel(n.summary.text), lx=dir>0?x0+2*k+8:x0+2*k-8-L.w, sel=id===selId&&!exporting;
+    s+=`<g class="sum" data-sum="${id}">${pathEl(d,col,1.8)}<rect x="${lx}" y="${mid-L.h/2}" width="${L.w}" height="${L.h}" rx="7" fill="var(--surface)" stroke="${sel?"var(--accent)":col}" stroke-width="${sel?2:1.5}"/><text x="${lx+L.w/2}" y="${mid}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="var(--fg)">${esc(n.summary.text)}</text></g>`;
+  }
+  return s;
+}
+function edgePt(p,tx,ty){
+  const cx=p.x+p.w/2,cy=p.y+p.h/2,dx=tx-cx,dy=ty-cy;
+  if(!dx&&!dy) return{x:cx,y:cy};
+  const s=Math.min(dx?(p.w/2+5)/Math.abs(dx):1e9,dy?(p.h/2+5)/Math.abs(dy):1e9);
+  return{x:cx+dx*s,y:cy+dy*s};
+}
+function relGeom(r){
+  const a=P.get(r.from),b=P.get(r.to); if(!a||!b) return null;
+  const s=edgePt(a,b.x+b.w/2,b.y+b.h/2),e=edgePt(b,a.x+a.w/2,a.y+a.h/2);
+  const dx=e.x-s.x,dy=e.y-s.y,len=Math.hypot(dx,dy)||1,off=Math.min(len*.3,120);
+  const c={x:(s.x+e.x)/2-dy/len*off,y:(s.y+e.y)/2+dx/len*off};
+  return{s,e,c,mid:{x:.25*s.x+.5*c.x+.25*e.x,y:.25*s.y+.5*c.y+.25*e.y}};
+}
+function relsSVG(){
+  let s="";
+  for(const r of doc.rels){
+    const g=relGeom(r); if(!g) continue;
+    const d=`M${g.s.x},${g.s.y}Q${g.c.x},${g.c.y} ${g.e.x},${g.e.y}`, sel=r.id===selRel&&!exporting;
+    s+=`<g class="rel" data-rel="${r.id}">${exporting?"":pathEl(d,"transparent",14)}${pathEl(d,sel?"var(--accent)":"var(--rel)",sel?2.4:1.6,` stroke-dasharray="6 5" marker-end="url(#zsArrow)" class="rline"`)}`;
+    if(r.label){const L=measureLabel(r.label);s+=`<rect x="${g.mid.x-L.w/2}" y="${g.mid.y-L.h/2}" width="${L.w}" height="${L.h}" rx="13" fill="var(--surface)" stroke="${sel?"var(--accent)":"var(--rel)"}" stroke-width="1"/><text x="${g.mid.x}" y="${g.mid.y}" text-anchor="middle" dominant-baseline="central" font-size="13" fill="var(--fg)">${esc(r.label)}</text>`}
+    s+="</g>";
+  }
+  return s;
+}
+function nodeSVG(n,p){
+  const {x,y,w,h,m,depth,boxed}=p, sel=n.id===selId&&!exporting, color=p.color||"var(--accent)";
+  let s=`<g class="node${sel?" sel":""}" data-id="${n.id}">`;
+  const r=depth===0?14:depth===1?9:7;
+  if(!exporting&&hits.length&&hits.includes(n.id)){
+    const cur=hits[hitIdx]===n.id;
+    s+=`<rect x="${x-7}" y="${y-7}" width="${w+14}" height="${h+14}" rx="${r+6}" fill="var(--hit)" fill-opacity="${cur?.75:.38}"/>`;
+  }
+  if(sel) s+=`<rect class="selring" x="${x-4}" y="${y-4}" width="${w+8}" height="${h+8}" rx="${r+4}"/>`;
+  if(relFrom===n.id) s+=`<rect x="${x-4}" y="${y-4}" width="${w+8}" height="${h+8}" rx="${r+4}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/>`;
+  let tc="var(--fg)";
+  if(depth===0){s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="var(--root-bg)"/>`;tc="var(--root-fg)"}
+  else if(depth===1){s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${color}"/>`;tc="var(--on-branch)"}
+  else if(boxed){s+=`<rect class="hov" x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="var(--surface)" stroke="${color}" stroke-width="1.5"/>`}
+  else{s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="transparent"/><path d="M${x},${y+h}H${x+w}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>`}
+  if(m.img){
+    const ix=x+(w-m.img.w)/2, iy=y+m.py, url=exporting?exportURLs.get(m.img.f.id):fileUrl(m.img.f.id);
+    if(url) s+=`<image href="${esc(url)}" x="${ix}" y="${iy}" width="${m.img.w}" height="${m.img.h}" preserveAspectRatio="xMidYMid meet"/>`;
+    else s+=`<rect x="${ix}" y="${iy}" width="${m.img.w}" height="${m.img.h}" rx="6" fill="var(--surface-2)" stroke="var(--line)"/><text x="${ix+m.img.w/2}" y="${iy+m.img.h/2}" text-anchor="middle" dominant-baseline="central" font-size="12" fill="var(--muted)">${missing.has(m.img.f.id)?"圖片不在這個瀏覽器":"載入中…"}</text>`;
+  }
+  const textTop=y+m.py+(m.img?m.img.h+8:0);
+  const rowStart=x+(w-(m.tw+(m.bw?m.bw+6:0)))/2, tcx=rowStart+m.tw/2;
+  m.lines.forEach((ln,i)=>{
+    s+=`<text x="${tcx}" y="${textTop+m.lh*i+m.lh/2}" text-anchor="middle" dominant-baseline="central" font-size="${m.fs}" font-weight="${m.wt}"${m.it?' font-style="italic"':""} fill="${tc}">${esc(ln)}</text>`;
+  });
+  if(m.badges.length){
+    let bx=rowStart+m.tw+6; const by=textTop+m.th/2;
+    for(const b of m.badges){
+      const inner=`<g class="badge" data-badge="${b.k}" data-bid="${n.id}"><rect x="${bx-2}" y="${by-11}" width="${b.w+4}" height="22" fill="transparent"/><text x="${bx}" y="${by}" dominant-baseline="central" font-size="12" fill="${tc}">${esc(b.t)}</text></g>`;
+      s+=b.k==="link"&&!exporting&&safeLink(n.link)?`<a href="${esc(safeLink(n.link))}" target="_blank" rel="noopener noreferrer">${inner}</a>`:inner;
+      bx+=b.w+2;
+    }
+  }
+  if(m.thumbs){
+    let tx=x+(w-m.thumbs.w)/2; const ty=textTop+m.th+8;
+    for(const f of m.thumbs.list){s+=thumbSVG(n,f,tx,ty);tx+=TH+TG}
+    if(m.thumbs.more) s+=`<g class="thumb" data-more="${n.id}"><title>還有 ${m.thumbs.more} 個附件</title><rect x="${tx}" y="${ty}" width="${TH}" height="${TH}" rx="7" fill="var(--surface-2)"/><text x="${tx+TH/2}" y="${ty+TH/2}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" fill="var(--muted)">+${m.thumbs.more}</text><rect class="tb" x="${tx}" y="${ty}" width="${TH}" height="${TH}" rx="7" fill="none" stroke="var(--line)" stroke-width="1"/></g>`;
+  }
+  if(depth>0&&n.children.length){
+    const canTog=!(VIEWER&&VOPT.collapse===false);
+    let t=p.togAt;
+    if(!t){if(p.tree)t={x:x+14,y:y+h+9};else t={x:p.dir>0?x+w+9:x-9,y:boxed?y+h/2:y+h}}
+    if(n.collapsed){
+      const c=countAll(n)-1;
+      s+=`<g class="tog"${canTog?` data-tog="${n.id}"`:""}><circle cx="${t.x}" cy="${t.y}" r="9" fill="${color}"/><text x="${t.x}" y="${t.y}" text-anchor="middle" dominant-baseline="central" font-size="${c>99?8:10}" font-weight="700" fill="var(--on-branch)">${c>99?"99+":c}</text></g>`;
+    }else if(!exporting&&canTog){
+      s+=`<g class="tog exp" data-tog="${n.id}"><circle cx="${t.x}" cy="${t.y}" r="7" fill="var(--surface)" stroke="${color}" stroke-width="1.5"/><path d="M${t.x-3.5},${t.y}H${t.x+3.5}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round"/></g>`;
+    }
+  }
+  return s+"</g>";
+}
+function thumbSVG(n,f,x,y){
+  const k=kindOf(f), col=KCOL[k], url=exporting?thumbCache.get(f.id):thumbURL(f);
+  let s=`<g class="thumb" data-thumb="${f.id}" data-tn="${n.id}"><title>${esc(f.name)}</title>`;
+  if(url){
+    s+=`<clipPath id="cp_${f.id}"><rect x="${x}" y="${y}" width="${TH}" height="${TH}" rx="7"/></clipPath><rect x="${x}" y="${y}" width="${TH}" height="${TH}" rx="7" fill="#ffffff"/><image href="${esc(url)}" x="${x}" y="${y}" width="${TH}" height="${TH}" preserveAspectRatio="xMidYMid slice" clip-path="url(#cp_${f.id})"/>`;
+    if(k==="pdf") s+=`<rect x="${x+3}" y="${y+TH-15}" width="24" height="12" rx="3" fill="${col}"/><text x="${x+15}" y="${y+TH-9}" text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="700" fill="#ffffff">PDF</text>`;
+  } else {
+    s+=`<rect x="${x}" y="${y}" width="${TH}" height="${TH}" rx="7" fill="${col}"/><text x="${x+TH/2}" y="${y+TH/2-6}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="#ffffff">${esc(extLabel(f))}</text><text x="${x+TH/2}" y="${y+TH/2+9}" text-anchor="middle" dominant-baseline="central" font-size="8" fill="#ffffff" fill-opacity="0.85">${esc(fmtSize(f.size).replace(" ",""))}</text>`;
+  }
+  return s+`<rect class="tb" x="${x}" y="${y}" width="${TH}" height="${TH}" rx="7" fill="none" stroke="var(--line)" stroke-width="1"/></g>`;
+}
+function safeLink(u){u=String(u||"").trim();if(!u)return"";if(/^(https?:|mailto:)/i.test(u))return u;if(/^[a-z][a-z0-9+.-]*:/i.test(u))return"";return"https://"+u}
+function applyView(){
+  const w=$("#world"); if(!w) return;
+  w.setAttribute("transform",`translate(${view.x},${view.y}) scale(${view.k})`);
+  const st=$("#stage"), g=22*view.k;
+  st.style.backgroundSize=`${g}px ${g}px`; st.style.backgroundPosition=`${view.x}px ${view.y}px`;
+  const zp=$("#zPct"); if(zp) zp.textContent=Math.round(view.k*100)+"%";
+  if(editing) placeEditor();
+}
+function renderCrumb(){
+  const c=$("#crumb"); if(!c) return;
+  if(!focusId){c.hidden=true;return}
+  const path=[];let n=get(focusId);while(n){path.unshift(n);n=INFO.get(n.id).parent}
+  c.innerHTML=path.map((n,i)=>i===path.length-1?`<span class="cur">${esc(n.text.split("\n")[0])}</span>`:`<button data-crumb="${i===0?"":n.id}">${i===0?"全圖":esc(n.text.split("\n")[0])}</button><span class="x">›</span>`).join("")
+    +`<button data-crumb="" title="離開聚焦 (Esc)">✕</button>`;
+  c.hidden=false;
+}
+
+/* ================= 介面狀態 ================= */
+function updateUI(){
+  if(VIEWER){const t=$("#vTitle");if(t)t.textContent=doc.title;return}
+  const n=selId&&get(selId), isRoot=n&&n===doc.root;
+  $("#bSib").disabled=!n; $("#bEdit").disabled=!n; $("#bDel").disabled=!(n&&!isRoot)&&!selRel; $("#bChild").disabled=!n;
+  $("#bRel").disabled=!n&&!relFrom; $("#bBound").disabled=!n||isRoot; $("#bSum").disabled=!n;
+  $("#bBound").setAttribute("aria-pressed",!!(n&&n.boundary)); $("#bSum").setAttribute("aria-pressed",!!(n&&n.summary));
+  $("#bRel").setAttribute("aria-pressed",!!relFrom);
+  $("#bFocus").disabled=!focusId&&(!n||isRoot); $("#bFocus").setAttribute("aria-pressed",!!focusId);
+  $("#bUndo").disabled=!undoStack.length; $("#bRedo").disabled=!redoStack.length;
+  $("#bInsp").setAttribute("aria-pressed",inspOpen);
+  $("#bSearch").setAttribute("aria-pressed",!$("#search").hidden);
+  $$("[data-layout]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.layout===doc.layout));
+  $$("[data-view]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.view===viewMode));
+  if(document.activeElement!==$("#title")) $("#title").value=doc.title;
+  $("#stCount").textContent=`主題 ${countAll(doc.root)}`;
+  $("#stDepth").textContent=`最深 ${maxDepth(doc.root)} 層`;
+  const fc=countFiles(doc.root); $("#stFiles").textContent=fc?`附件 ${fc}`:"";
+}
+let pendingDelete=null;
+function renderDocs(){
+  const ul=$("#docs"); if(!ul) return;
+  index.sort((a,b)=>b.updated-a.updated);
+  ul.innerHTML=index.map(d=>`<li class="doc${d.id===doc.id?" on":""}" data-doc="${d.id}">
+    <span class="t">${esc(d.title||"未命名")}</span>
+    <span class="m">${fmtDate(d.updated)} · ${d.count||1} 個主題</span>
+    <button class="x" data-delask="${d.id}" title="刪除這份心智圖" aria-label="刪除"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    ${pendingDelete===d.id?`<div class="confirm">確定刪除？<button class="del" data-delyes="${d.id}">刪除</button><button data-delno>取消</button></div>`:""}
+  </li>`).join("");
+}
+function fmtDate(t){
+  const d=new Date(t),now=new Date();
+  if(d.toDateString()===now.toDateString()) return `今天 ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  return `${d.getFullYear()===now.getFullYear()?"":d.getFullYear()+"/"}${d.getMonth()+1}/${d.getDate()}`;
+}
+const fmtSize=b=>b<1024?b+" B":b<1048576?(b/1024).toFixed(b<10240?1:0)+" KB":(b/1048576).toFixed(1)+" MB";
+let toastTimer=null;
+function toast(msg){const t=$("#toast");if(!t)return;t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,2800)}
+
+/* ================= 存檔與歷史 ================= */
+function scheduleSave(){
+  if(VIEWER) return;
+  doc.updated=Date.now(); clearTimeout(saveTimer);
+  $("#stSave").textContent="儲存中…"; saveTimer=setTimeout(saveNow,350);
+}
+function saveNow(){
+  if(VIEWER||!doc) return;
+  clearTimeout(saveTimer);
+  const ok=store.set(KEY_DOC+doc.id,{id:doc.id,title:doc.title,layout:doc.layout,theme:doc.theme,updated:doc.updated,root:doc.root,rels:doc.rels});
+  const meta={id:doc.id,title:doc.title,updated:doc.updated,count:countAll(doc.root)};
+  const i=index.findIndex(d=>d.id===doc.id); if(i>=0) index[i]=meta; else index.push(meta);
+  const ok2=store.set(KEY_INDEX,index); store.set(KEY_LAST,doc.id);
+  saveOK=ok&&ok2;
+  const t=new Date(), el=$("#stSave");
+  if(saveOK){el.className="";el.textContent=`已自動儲存 ${pad2(t.getHours())}:${pad2(t.getMinutes())}`}
+  else{el.className="warn";el.textContent="無法存到瀏覽器，請用「匯出」備份"}
+  renderDocs();
+}
+function snap(){return JSON.stringify({root:doc.root,layout:doc.layout,rels:doc.rels,theme:doc.theme})}
+function pushHistory(){undoStack.push(snap());if(undoStack.length>200)undoStack.shift();redoStack=[]}
+function restore(s){const o=JSON.parse(s);doc.root=o.root;doc.layout=o.layout;doc.rels=o.rels||[];doc.theme=o.theme||"classic"}
+function undo(){if(!undoStack.length)return;redoStack.push(snap());restore(undoStack.pop());changed();renderInspector(true);if(viewMode==="outline")renderOutline()}
+function redo(){if(!redoStack.length)return;undoStack.push(snap());restore(redoStack.pop());changed();renderInspector(true);if(viewMode==="outline")renderOutline()}
+function mutate(fn){pushHistory();fn();changed()}
+function changed(){render();scheduleSave()}
+
+/* ================= 主題操作 ================= */
+const defaultText=d=>d===1?"分支主題":"子主題";
+function select(id){selId=id;selRel=null;render()}
+function addChild(){
+  const n=selId?get(selId):doc.root; if(!n) return;
+  const c=N(defaultText(INFO.get(n.id).depth+1));
+  mutate(()=>{n.collapsed=false;n.children.push(c);selId=c.id;selRel=null});
+  ensureVisible(c.id); startEdit(c.id,{isNew:true,selectAll:true});
+}
+function addSibling(){
+  const n=selId&&get(selId); if(!n) return;
+  const inf=INFO.get(n.id); if(!inf.parent||n.id===focusId){addChild();return}
+  const c=N(defaultText(inf.depth));
+  mutate(()=>{const arr=inf.parent.children;arr.splice(arr.indexOf(n)+1,0,c);selId=c.id});
+  ensureVisible(c.id); startEdit(c.id,{isNew:true,selectAll:true});
+}
+function removeSel(){
+  if(selRel){mutate(()=>{doc.rels=doc.rels.filter(r=>r.id!==selRel);selRel=null});renderInspector(true);return}
+  const n=selId&&get(selId); if(!n) return;
+  const inf=INFO.get(n.id); if(!inf.parent) return;
+  mutate(()=>{const arr=inf.parent.children,i=arr.indexOf(n);arr.splice(i,1);selId=(arr[i]||arr[i-1]||inf.parent).id});
+}
+function toggle(id){const n=get(id);if(!n||!n.children.length||n===doc.root)return;mutate(()=>{n.collapsed=!n.collapsed})}
+function moveNode(id,targetId,mode){
+  const n=get(id),t=get(targetId); if(!n||!t||inSubtree(n,targetId)) return;
+  if(mode!=="child"&&!INFO.get(targetId).parent) mode="child";
+  mutate(()=>{
+    const from=INFO.get(id).parent.children; from.splice(from.indexOf(n),1);
+    if(mode==="child"){t.collapsed=false;t.children.push(n)}
+    else{const tp=INFO.get(targetId).parent.children;tp.splice(tp.indexOf(t)+(mode==="after"?1:0),0,n)}
+    selId=id;
+  });
+}
+function reid(n){n.id=uid();n.children.forEach(reid);return n}
+function subtreeText(n,d=0){return "  ".repeat(d)+n.text.replace(/\n/g," ")+"\n"+n.children.map(c=>subtreeText(c,d+1)).join("")}
+function copySel(cut){
+  const n=selId&&get(selId); if(!n) return;
+  clip=clone(n); clipText=subtreeText(n).trim();
+  try{navigator.clipboard.writeText(clipText).catch(()=>{clipText=null})}catch(e){clipText=null}
+  if(cut&&n!==doc.root) removeSel(); else toast("已複製分支");
+}
+function pasteNodes(list){
+  const n=selId?get(selId):doc.root; if(!n||!list.length) return;
+  mutate(()=>{n.collapsed=false;list.forEach(c=>n.children.push(c));selId=list[list.length-1].id});
+  ensureVisible(selId);
+}
+function toggleStyle(k){const n=selId&&get(selId);if(!n)return;mutate(()=>{n.style=Object.assign({},n.style,{[k]:!(n.style&&n.style[k])})});renderInspector(true)}
+function toggleBoundary(){const n=selId&&get(selId);if(!n||n===doc.root)return;mutate(()=>{n.boundary=n.boundary?undefined:{label:""}});renderInspector(true)}
+function toggleSummary(){
+  const n=selId&&get(selId);if(!n)return;const adding=!n.summary;
+  mutate(()=>{n.summary=n.summary?undefined:{text:"概要"}});
+  if(adding){openInsp(true);const i=$("#iSText");if(i){i.focus();i.select()}}else renderInspector(true);
+}
+function setFocus(id){
+  if(editing) commitEdit();
+  focusId=id&&id!==doc.root.id?id:null; if(focusId) selId=focusId;
+  render(); fit();
+}
+
+/* ================= 附件 ================= */
+const extOf=n=>(String(n).match(/\.([a-z0-9]+)$/i)||[,""])[1].toLowerCase();
+const isImg=f=>/^image\//.test(f.type)||["png","jpg","jpeg","gif","webp","svg","bmp","heic"].includes(extOf(f.name));
+function fileIcon(f){
+  const e=extOf(f.name);
+  if(isImg(f))return"🖼️";if(e==="pdf")return"📕";if(["doc","docx","odt","rtf","pages"].includes(e))return"📘";
+  if(["xls","xlsx","csv","ods","numbers"].includes(e))return"📗";if(["ppt","pptx","odp","key"].includes(e))return"📙";
+  if(["zip","rar","7z"].includes(e))return"🗜️";if(["mp3","wav","m4a"].includes(e))return"🎵";if(["mp4","mov","webm"].includes(e))return"🎬";
+  if(["txt","md"].includes(e))return"📄";return"📎";
+}
+function kindOf(f){
+  const e=extOf(f.name);
+  if(isImg(f)) return"img"; if(e==="pdf"||f.type==="application/pdf") return"pdf";
+  if(["doc","docx","odt","rtf","pages"].includes(e)) return"word";
+  if(["xls","xlsx","xlsm","csv","ods","numbers"].includes(e)) return"excel";
+  if(["ppt","pptx","odp","key"].includes(e)) return"ppt";
+  if(["mp4","mov","webm","m4v"].includes(e)||/^video\//.test(f.type)) return"video";
+  if(["mp3","wav","m4a","ogg","aac"].includes(e)||/^audio\//.test(f.type)) return"audio";
+  if(["txt","md","markdown","json","js","css","html","xml","log","yml","yaml"].includes(e)||/^text\//.test(f.type)) return"text";
+  if(["zip","rar","7z","gz"].includes(e)) return"zip";
+  return"other";
+}
+const KCOL={pdf:"#d24b3e",word:"#2b5fb3",excel:"#1f7a4a",ppt:"#c8562b",video:"#6b4fb3",audio:"#9a4f8a",text:"#5b6677",zip:"#7a6a55",img:"#6a7cc4",other:"#6b7482"};
+const extLabel=f=>(extOf(f.name)||"FILE").toUpperCase().slice(0,4);
+const thumbCache=new Map(), thumbPending=new Set(), thumbFailed=new Set();
+function thumbURL(f){
+  if(thumbCache.has(f.id)) return thumbCache.get(f.id);
+  if(VIEWER){const t=EMBED&&EMBED.thumbs&&EMBED.thumbs[f.id];if(t){thumbCache.set(f.id,t);return t}return null}
+  const k=kindOf(f); if(k!=="img"&&k!=="pdf") return null;
+  if(!thumbPending.has(f.id)&&!thumbFailed.has(f.id)){
+    thumbPending.add(f.id);
+    genThumb(f).then(u=>{thumbPending.delete(f.id);if(u){thumbCache.set(f.id,u);render();renderInspector(true)}else thumbFailed.add(f.id)});
+  }
+  return null;
+}
+async function genThumb(f){
+  if(thumbCache.has(f.id)) return thumbCache.get(f.id);
+  try{
+    const saved=await idbGet("t_"+f.id); if(typeof saved==="string") return saved;
+    const blob=await getBlob(f.id); if(!blob) return null;
+    const c=kindOf(f)==="pdf"?await pdfThumb(blob):await imgThumb(blob); if(!c) return null;
+    const u=c.toDataURL("image/jpeg",.84); idbPut("t_"+f.id,u); return u;
+  }catch(e){return null}
+}
+async function imgThumb(blob){
+  let src;
+  try{src=await createImageBitmap(blob)}catch(e){
+    src=await new Promise(res=>{const u=URL.createObjectURL(blob),i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=u});
+  }
+  if(!src) return null;
+  const W=src.width||src.naturalWidth, H=src.height||src.naturalHeight; if(!W||!H) return null;
+  const S=128, c=document.createElement("canvas"); c.width=S; c.height=S;
+  const g=c.getContext("2d"), sc=Math.max(S/W,S/H); g.fillStyle="#fff"; g.fillRect(0,0,S,S);
+  g.drawImage(src,(S-W*sc)/2,(S-H*sc)/2,W*sc,H*sc); return c;
+}
+async function pdfThumb(blob){
+  const L=await loadPdf(), pdf=await L.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise, page=await pdf.getPage(1);
+  const v1=page.getViewport({scale:1}), vp=page.getViewport({scale:160/v1.width});
+  const c=document.createElement("canvas"); c.width=Math.ceil(vp.width); c.height=Math.ceil(vp.height);
+  const g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height);
+  await page.render({canvasContext:g,viewport:vp}).promise;
+  const o=document.createElement("canvas"); o.width=160; o.height=160; const og=o.getContext("2d");
+  og.fillStyle="#fff"; og.fillRect(0,0,160,160); og.drawImage(c,0,0); try{pdf.destroy()}catch(e){} return o;
+}
+async function imgDims(blob){
+  try{if(window.createImageBitmap){const b=await createImageBitmap(blob);const r={w:b.width,h:b.height};b.close&&b.close();return r}}catch(e){}
+  return new Promise(res=>{const u=URL.createObjectURL(blob),i=new Image();i.onload=()=>{res({w:i.naturalWidth,h:i.naturalHeight});URL.revokeObjectURL(u)};i.onerror=()=>{res({w:0,h:0});URL.revokeObjectURL(u)};i.src=u});
+}
+async function attachFiles(nodeId,files,{autoImage=false}={}){
+  const n=get(nodeId); if(!n||!files.length) return;
+  const recs=[];
+  for(const f of files){
+    if(f.size>200*1048576){toast(`「${f.name}」超過 200 MB，沒有加入`);continue}
+    const rec={id:uid(),name:f.name||("貼上的圖片."+((f.type||"image/png").split("/")[1]||"png")),type:f.type||"",size:f.size};
+    if(isImg(rec)&&extOf(rec.name)!=="heic"){const d=await imgDims(f);rec.iw=d.w;rec.ih=d.h}
+    await putBlob(rec.id,f); urlCache.set(rec.id,URL.createObjectURL(f)); recs.push(rec);
+  }
+  if(!recs.length) return;
+  mutate(()=>{n.files=(n.files||[]).concat(recs);
+    if(autoImage&&!n.image){const im=recs.find(r=>isImg(r)&&r.iw);if(im)n.image=im.id}});
+  renderInspector(true);
+  toast(idbOK?`已在「${n.text.split("\n")[0].slice(0,16)}」加入 ${recs.length} 個附件`:"已加入附件，但瀏覽器不允許長期保存，請記得匯出 JSON 備份");
+}
+function openFile(nodeId,fid,rect){openPeek(nodeId,fid,rect||null)}
+async function downloadFile(f,blob,msgEl){
+  blob=blob||await getBlob(f.id);
+  if(!blob){toast("這個附件不在目前的瀏覽器中");return}
+  const r=await saveFile(f.name,blob);
+  const msg=r==="saved"?`已下載「${f.name}」`:r==="declined"?"已取消下載":r==="ext"?"這個檔案格式無法從這裡直接下載，請用本機版織思開啟，或匯出 JSON 備份保存":r==="busy"?"已有下載視窗開著，請稍後再試":"這裡無法下載檔案";
+  if(msgEl) msgEl.textContent=msg; else toast(msg);
+}
+
+/* ================= 文字編輯 ================= */
+let editing=null;
+const ed=$("#editor");
+function startEdit(id,{isNew=false,selectAll=false,replace=false}={}){
+  if(VIEWER||!ed) return;
+  const n=get(id); if(!n||!P.has(id)) return;
+  editing={id,isNew,orig:n.text}; selId=id; selRel=null; render();
+  ed.hidden=false; ed.value=replace?"":n.text; placeEditor(); ed.focus();
+  if(selectAll) ed.select(); else{const L=ed.value.length;ed.setSelectionRange(L,L)}
+  $("#hint").hidden=true;
+}
+function placeEditor(){
+  const p=P.get(editing.id); if(!p) return;
+  const m=p.m,k=view.k,s=styleFor(p.depth,p.boxed);
+  ctx.font=`${m.it?"italic ":""}${m.wt} ${m.fs}px ${FAMILY}`;
+  const widest=Math.max(...ed.value.split("\n").map(l=>ctx.measureText(l).width),0);
+  const w=Math.max(p.w,Math.min(widest,s.max)+m.px*2+6,110), cx=p.x+p.w/2;
+  const ty=p.y+(m.img?m.img.h+8:0);
+  Object.assign(ed.style,{left:(view.x+(cx-w/2)*k)+"px",top:(view.y+ty*k-2)+"px",width:(w*k+4)+"px",
+    fontSize:(m.fs*k)+"px",fontWeight:m.wt,fontStyle:m.it?"italic":"normal",lineHeight:(m.lh*k)+"px",padding:`${m.py*k}px ${m.px*k}px`,fontFamily:FAMILY});
+  ed.style.height="auto"; ed.style.height=Math.max(ed.scrollHeight,(m.th+m.py*2)*k+4)+"px";
+}
+function commitEdit(){
+  if(!editing) return;
+  const {id,isNew,orig}=editing; editing=null; ed.hidden=true;
+  const n=get(id); let v=ed.value.replace(/\s+$/,"");
+  if(n&&v!==orig){
+    if(!v.trim()) v=orig||defaultText(INFO.get(id).depth);
+    if(isNew){n.text=v;changed()}else mutate(()=>{n.text=v});
+  } else render();
+  $("#stage").focus({preventScroll:true});
+}
+function cancelEdit(){if(!editing)return;editing=null;ed.hidden=true;render();$("#stage").focus({preventScroll:true})}
+if(!VIEWER){
+  on(ed,"input",placeEditor);
+  on(ed,"keydown",e=>{
+    if(e.isComposing||e.keyCode===229) return;
+    if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();const was=editing&&editing.id;commitEdit();if(e.ctrlKey||e.metaKey)return;if(was&&get(was)&&get(was)!==doc.root&&was!==focusId)addSibling();return}
+    if(e.key==="Tab"){e.preventDefault();commitEdit();addChild();return}
+    if(e.key==="Escape"){e.preventDefault();cancelEdit()}
+    e.stopPropagation();
+  });
+  on(ed,"blur",()=>{if(editing)commitEdit()});
+}
+
+/* ================= 視圖 ================= */
+let stage=null;
+const stageRect=()=>stage.getBoundingClientRect();
+function zoomAt(k,px,py){k=Math.min(3,Math.max(.15,k));view.x=px-(px-view.x)*k/view.k;view.y=py-(py-view.y)*k/view.k;view.k=k;applyView()}
+function zoomCenter(f){const r=stageRect();zoomAt(view.k*f,r.width/2,r.height/2)}
+function worldBox(){
+  let bb=null;try{bb=$("#world").getBBox()}catch(e){}
+  if(!bb||!bb.width){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const p of P.values()){a=Math.min(a,p.x);b=Math.min(b,p.y);c=Math.max(c,p.x+p.w);d=Math.max(d,p.y+p.h)}bb={x:a,y:b,width:c-a,height:d-b}}
+  return bb;
+}
+function fit(){
+  if(!stage) return; const r=stageRect(); if(!r.width) return;
+  const B=worldBox(),pad=VIEWER?24:48;
+  const k=Math.min(1.25,Math.max(.15,Math.min((r.width-pad*2)/B.width,(r.height-pad*2)/B.height)));
+  view.k=k; view.x=r.width/2-(B.x+B.width/2)*k; view.y=r.height/2-(B.y+B.height/2)*k; applyView();
+}
+function ensureVisible(id){
+  const p=P.get(id); if(!p||!stage) return; const r=stageRect(),m=40,k=view.k;
+  const sx=view.x+p.x*k,sy=view.y+p.y*k,ex=sx+p.w*k,ey=sy+p.h*k;
+  if(sx<m)view.x+=m-sx;else if(ex>r.width-m)view.x-=Math.min(ex-(r.width-m),sx-m);
+  if(sy<m)view.y+=m-sy;else if(ey>r.height-m)view.y-=Math.min(ey-(r.height-m),sy-m);
+  applyView();
+}
+function toWorld(cx,cy){const r=stageRect();return{x:(cx-r.left-view.x)/view.k,y:(cy-r.top-view.y)/view.k}}
+function nodeAt(cx,cy,exclude){
+  const w=toWorld(cx,cy);let best=null;
+  for(const [id,p] of P){if(exclude&&inSubtree(exclude,id))continue;if(w.x>=p.x-8&&w.x<=p.x+p.w+8&&w.y>=p.y-8&&w.y<=p.y+p.h+8)best={id,p,w}}
+  return best;
+}
+
+/* ================= 指標互動 ================= */
+const ptrs=new Map(); let gesture=null, lastTap={id:null,t:0};
+function cancelRel(){relFrom=null;$("#relhint").hidden=true;stage.classList.remove("relmode");$("#overlay").innerHTML="";render()}
+function bindPointer(){
+  stage.tabIndex=0;
+  on(stage,"pointerdown",e=>{
+    if(e.target===ed||e.target.closest(".crumb,.search,.vcard,.relhint,.toast,.ctx,.peek,.peek-bg")) return;
+    if(e.target.closest("a")) return;
+    if(editing) commitEdit();
+    if(e.button===2){
+      const g2=e.target.closest(".node");
+      if(g2&&!VIEWER&&(selId!==g2.dataset.id||selRel)){selId=g2.dataset.id;selRel=null;render()}
+      return;
+    }
+    const th=e.target.closest("[data-thumb],[data-more]");
+    if(th&&!relFrom){
+      e.preventDefault();
+      const nid=th.dataset.tn||th.dataset.more, n=get(nid); if(!n) return;
+      let fid=th.dataset.thumb; if(!fid){const tb=thumbsOf(n);fid=tb&&tb.all[TMAX-1]&&tb.all[TMAX-1].id}
+      const rect=th.getBoundingClientRect();
+      if(selId!==nid||selRel){selId=nid;selRel=null;render()}
+      if(fid) openPeek(nid,fid,rect);
+      return;
+    }
+    stage.focus({preventScroll:true});
+    ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(ptrs.size===2){const [a,b]=[...ptrs.values()];gesture={type:"pinch",d:Math.hypot(a.x-b.x,a.y-b.y),k:view.k,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,vx:view.x,vy:view.y};if($("#ghost"))$("#ghost").hidden=true;$("#overlay").innerHTML="";return}
+    stage.setPointerCapture(e.pointerId);
+    const tog=e.target.closest("[data-tog]");
+    if(tog){gesture={type:"tog",id:tog.dataset.tog};return}
+    const g=e.target.closest(".node"), badge=e.target.closest("[data-badge]"), relEl=e.target.closest("[data-rel]"), sum=e.target.closest("[data-sum]");
+    if(relFrom){
+      if(g&&g.dataset.id!==relFrom){
+        const r={id:uid(),from:relFrom,to:g.dataset.id,label:""};
+        relFrom=null;$("#relhint").hidden=true;stage.classList.remove("relmode");$("#overlay").innerHTML="";
+        mutate(()=>{doc.rels.push(r);selRel=r.id;selId=null});openInsp(true);const i=$("#iRelLabel");if(i)i.focus();
+      } else if(!g) cancelRel();
+      gesture=null; return;
+    }
+    if(VIEWER){
+      if(g){selId=g.dataset.id;render();showCard(g.dataset.id)}else{if(selId){selId=null;render()}showCard(null)}
+      gesture={type:"pan",sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y};stage.classList.add("panning");return;
+    }
+    if(badge){selId=badge.dataset.bid;selRel=null;render();openInsp(true);gesture=null;return}
+    if(relEl){selRel=relEl.dataset.rel;selId=null;render();gesture=null;return}
+    if(sum){select(sum.dataset.sum);gesture=null;return}
+    if(g){
+      const id=g.dataset.id,now=Date.now();
+      if(lastTap.id===id&&now-lastTap.t<380){lastTap={id:null,t:0};gesture=null;startEdit(id,{selectAll:true});e.preventDefault();return}
+      lastTap={id,t:now};
+      if(selId!==id||selRel){selId=id;selRel=null;render()}
+      gesture={type:"node",id,sx:e.clientX,sy:e.clientY,drag:false};
+      if(e.pointerType==="touch"){const cx=e.clientX,cy=e.clientY;gesture.lp=setTimeout(()=>{if(gesture&&gesture.type==="node"&&!gesture.drag&&gesture.id===id){gesture=null;ptrs.clear();lpAt=Date.now();ctxNodeMenu(id,cx,cy)}},550)}
+    }else{
+      if(selId||selRel){selId=null;selRel=null;render()}
+      gesture={type:"pan",sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y};stage.classList.add("panning");
+    }
+  });
+  on(stage,"pointermove",e=>{
+    if(relFrom&&!ptrs.size){const a=P.get(relFrom);if(a){const w=toWorld(e.clientX,e.clientY);$("#overlay").innerHTML=pathEl(`M${a.x+a.w/2},${a.y+a.h/2}L${w.x},${w.y}`,"var(--accent)",1.6,' stroke-dasharray="5 4"')}return}
+    if(!ptrs.has(e.pointerId)||!gesture) return;
+    ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(gesture.type==="pinch"&&ptrs.size>=2){
+      const [a,b]=[...ptrs.values()],r=stageRect(),d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+      view.x=gesture.vx+(mx-gesture.mx);view.y=gesture.vy+(my-gesture.my);view.k=gesture.k;
+      zoomAt(gesture.k*d/gesture.d,mx-r.left,my-r.top);return;
+    }
+    if(gesture.type==="pan"){view.x=gesture.vx+e.clientX-gesture.sx;view.y=gesture.vy+e.clientY-gesture.sy;applyView();return}
+    if(gesture.type==="node"){
+      if(!gesture.drag){
+        if(Math.hypot(e.clientX-gesture.sx,e.clientY-gesture.sy)<6) return;
+        clearTimeout(gesture.lp); if(gesture.id===doc.root.id||gesture.id===focusId) return;
+        clearTimeout(gesture.lp); gesture.drag=true;const gh=$("#ghost");gh.textContent=get(gesture.id).text.split("\n")[0];gh.hidden=false;
+      }
+      const r=stageRect(),gh=$("#ghost");gh.style.left=(e.clientX-r.left+12)+"px";gh.style.top=(e.clientY-r.top+10)+"px";
+      gesture.target=dropTarget(e.clientX,e.clientY,gesture.id);drawDrop(gesture.target);
+    }
+  });
+  const endPtr=e=>{
+    ptrs.delete(e.pointerId);
+    if(!gesture) return;
+    clearTimeout(gesture.lp);
+    if(gesture.type==="pinch"){if(!ptrs.size)gesture=null;return}
+    if(gesture.type==="tog") toggle(gesture.id);
+    if(gesture.type==="node"&&gesture.drag){$("#ghost").hidden=true;$("#overlay").innerHTML="";const t=gesture.target;if(t)moveNode(gesture.id,t.id,t.mode)}
+    stage.classList.remove("panning");gesture=null;
+  };
+  on(stage,"pointerup",endPtr); on(stage,"pointercancel",endPtr);
+  on(stage,"wheel",e=>{
+    closeCtx();
+    if(e.target.closest(".vcard,.peek")) return;
+    e.preventDefault();const r=stageRect();
+    if(e.ctrlKey||e.metaKey) zoomAt(view.k*Math.exp(-e.deltaY*.0022),e.clientX-r.left,e.clientY-r.top);
+    else{view.x-=e.deltaX;view.y-=e.deltaY;applyView()}
+  },{passive:false});
+  on("#crumb","click",e=>{const b=e.target.closest("[data-crumb]");if(b)setFocus(b.dataset.crumb||null)});
+}
+function dropTarget(cx,cy,dragId){
+  const hit=nodeAt(cx,cy,get(dragId)); if(!hit) return null;
+  const {id,p,w}=hit; let mode="child";
+  if(p.depth>0){
+    const f=((doc.layout==="org"||doc.layout==="fish")&&p.depth===1)?(w.x-p.x)/p.w:(w.y-p.y)/p.h;
+    if(f<.28)mode="before";else if(f>.72)mode="after";
+  }
+  return{id,mode};
+}
+function drawDrop(t){
+  const o=$("#overlay"); if(!t){o.innerHTML="";return}
+  const p=P.get(t.id);
+  if(t.mode==="child") o.innerHTML=`<rect class="drop-in" x="${p.x-6}" y="${p.y-6}" width="${p.w+12}" height="${p.h+12}" rx="10"/>`;
+  else if((doc.layout==="org"||doc.layout==="fish")&&p.depth===1){const x=t.mode==="before"?p.x-8:p.x+p.w+8;o.innerHTML=`<path class="drop-line" d="M${x},${p.y-4}V${p.y+p.h+4}"/>`}
+  else{const y=t.mode==="before"?p.y-6:p.y+p.h+6;o.innerHTML=`<path class="drop-line" d="M${p.x-4},${y}H${p.x+p.w+4}"/>`}
+}
+
+/* ================= 鍵盤 ================= */
+function navigate(dir){
+  if(!selId){selId=(focusId||doc.root.id);selRel=null;render();return}
+  const p=P.get(selId); if(!p) return;
+  const c={x:p.x+p.w/2,y:p.y+p.h/2}; let best=null,bs=1e9;
+  for(const [id,q] of P){
+    if(id===selId) continue;
+    const dx=q.x+q.w/2-c.x,dy=q.y+q.h/2-c.y;let main,side;
+    if(dir==="ArrowRight"){main=dx;side=dy}else if(dir==="ArrowLeft"){main=-dx;side=dy}else if(dir==="ArrowDown"){main=dy;side=dx}else{main=-dy;side=dx}
+    if(main<=4) continue;
+    const sc=main+Math.abs(side)*2.2; if(sc<bs){bs=sc;best=id}
+  }
+  if(best){selId=best;render();ensureVisible(best);if(VIEWER)showCard(best)}
+}
+function anyModal(){return $$(".modal").some(m=>!m.hidden)}
+function onKey(e){
+  if(ctxIsOpen()){
+    const k=e.key;
+    if(k==="Escape"){e.preventDefault();closeCtx();stage.focus({preventScroll:true})}
+    else if(k==="ArrowDown"||k==="ArrowUp"){e.preventDefault();const bs=[...$("#ctx").querySelectorAll("button:not(:disabled)")],i=bs.indexOf(document.activeElement),nx=bs[(i+(k==="ArrowDown"?1:-1)+bs.length)%bs.length];if(nx)nx.focus()}
+    else if(k==="Tab") e.preventDefault();
+    return;
+  }
+  if(peek){
+    if(e.key==="Escape"){e.preventDefault();closePeek()}
+    else if(e.key==="ArrowLeft"){e.preventDefault();peekNav(-1)}
+    else if(e.key==="ArrowRight"){e.preventDefault();peekNav(1)}
+    return;
+  }
+  const a=document.activeElement;
+  if(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"||a.tagName==="SELECT")) return;
+  if(anyModal()){if(e.key==="Escape")closeModals();return}
+  const mod=e.metaKey||e.ctrlKey,k=e.key,kl=k.toLowerCase();
+  if(VIEWER){
+    if(k.startsWith("Arrow")){e.preventDefault();navigate(k)}
+    else if(k===" "&&selId&&VOPT.collapse!==false){e.preventDefault();toggle(selId)}
+    else if(k==="Escape"){showCard(null);selId=null;render()}
+    else if(mod&&(k==="="||k==="+")){e.preventDefault();zoomCenter(1.2)}
+    else if(mod&&k==="-"){e.preventDefault();zoomCenter(1/1.2)}
+    else if(mod&&k==="0"){e.preventDefault();fit()}
+    return;
+  }
+  if(mod&&kl==="f"){e.preventDefault();openSearch();return}
+  if(viewMode==="outline") return;
+  if(mod){
+    if(kl==="z"){e.preventDefault();e.shiftKey?redo():undo();return}
+    if(kl==="y"){e.preventDefault();redo();return}
+    if(k==="="||k==="+"){e.preventDefault();zoomCenter(1.2);return}
+    if(k==="-"){e.preventDefault();zoomCenter(1/1.2);return}
+    if(k==="0"){e.preventDefault();fit();return}
+    if(kl==="c"&&selId){e.preventDefault();copySel(false);return}
+    if(kl==="x"&&selId){e.preventDefault();copySel(true);return}
+    if(kl==="b"&&selId){e.preventDefault();toggleStyle("bold");return}
+    if(kl==="i"&&selId){e.preventDefault();toggleStyle("italic");return}
+    return;
+  }
+  if(k==="Escape"){
+    if(relFrom){cancelRel();return}
+    if(selId||selRel){selId=null;selRel=null;render();return}
+    if(focusId){setFocus(null);return}
+    return;
+  }
+  if(k==="ContextMenu"||(k==="F10"&&e.shiftKey)){e.preventDefault();if(selId){const r=nodeRect(selId);if(r)ctxNodeMenu(selId,r.left+r.width/2,r.top+r.height/2)}return}
+  if(k==="Tab"){e.preventDefault();addChild();return}
+  if(k==="Enter"){e.preventDefault();if(!selId)select(focusId||doc.root.id);else addSibling();return}
+  if(k==="Delete"||k==="Backspace"){if(selId||selRel){e.preventDefault();removeSel()}return}
+  if(k==="F2"){if(selId){e.preventDefault();startEdit(selId,{selectAll:true})}return}
+  if(k===" "){if(selId){e.preventDefault();toggle(selId)}return}
+  if(k.startsWith("Arrow")){e.preventDefault();navigate(k);return}
+  if(selId&&!e.altKey&&(k.length===1||k==="Process"||e.keyCode===229)) startEdit(selId,{replace:true});
+}
+
+/* ================= 屬性面板 ================= */
+let inspKey="", histArmed=false;
+function openInsp(force){
+  inspOpen=true; $("#insp").hidden=false; store.set(KEY_INSP,true);
+  renderInspector(!!force); updateUI(); requestAnimationFrame(()=>applyView());
+}
+function closeInsp(){inspOpen=false;$("#insp").hidden=true;store.set(KEY_INSP,false);updateUI()}
+function renderInspector(force){
+  if(VIEWER||!inspOpen) return;
+  const el=$("#insp"), key=(selRel?"r:"+selRel:selId?"n:"+selId:"none")+"|"+doc.id;
+  if(!force&&key===inspKey) return;
+  if(el.contains(document.activeElement)&&document.activeElement.matches("textarea,input[type=text],input[type=url]")&&key===inspKey) return;
+  inspKey=key; histArmed=false;
+  const head=t=>`<div class="ih"><h3>${t}</h3><button class="btn" data-iact="close" title="關閉面板"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`;
+  if(selRel){
+    const r=doc.rels.find(x=>x.id===selRel); if(!r) return;
+    el.innerHTML=`<div class="insp-in">${head("關聯線")}
+      <p class="ipath">${esc(get(r.from).text.split("\n")[0])} → ${esc(get(r.to).text.split("\n")[0])}</p>
+      <section><h5>說明文字</h5><input type="text" id="iRelLabel" value="${esc(r.label||"")}" placeholder="例如：因果、對照、參考"></section>
+      <section><div class="irow"><button class="tbtn" data-iact="relflip">反轉方向</button><button class="tbtn" data-iact="reldel" style="color:var(--danger)">刪除關聯線</button></div></section></div>`;
+    return;
+  }
+  const n=selId&&get(selId);
+  if(!n){
+    el.innerHTML=`<div class="insp-in">${head("心智圖設定")}
+      <section><h5>分支配色</h5><div class="themes">${Object.entries(THEMES).map(([k,t])=>`<button class="th" data-iact="theme:${k}" aria-pressed="${doc.theme===k}">${t.name}<span class="dots">${t.L.map(c=>`<i style="background:${c}"></i>`).join("")}</span></button>`).join("")}</div></section>
+      <p class="iempty">選取一個主題，就能在這裡設定粗體、顏色、標記、備註、超連結，以及加入 Word、PDF、圖片等附件。</p></div>`;
+    return;
+  }
+  const inf=INFO.get(n.id), isRoot=!inf.parent, st=n.style||{}, icons=n.icons||[];
+  const path=[];let p=inf.parent;while(p){path.unshift(p.text.split("\n")[0]);p=INFO.get(p.id).parent}
+  const files=n.files||[];
+  el.innerHTML=`<div class="insp-in">${head("主題屬性")}
+    <p class="ipath" title="${esc(path.join(" › "))}">${esc(path.length?path.join(" › ")+" › ":"")}<b>${esc(n.text.split("\n")[0])}</b></p>
+    <section><h5>樣式</h5>
+      <div class="irow"><button class="tbtn" data-iact="bold" aria-pressed="${!!st.bold}" title="粗體 ⌘B"><b>B</b></button><button class="tbtn" data-iact="italic" aria-pressed="${!!st.italic}" title="斜體 ⌘I"><i>I</i></button></div>
+      ${isRoot?"":`<div class="irow" aria-label="分支顏色"><button class="sw def" data-iact="color:" aria-pressed="${!st.color}" title="跟隨配色主題"></button>${SWATCH.map(c=>`<button class="sw" style="background:${c}" data-iact="color:${c}" aria-pressed="${st.color===c}" title="${c}"></button>`).join("")}</div>`}
+    </section>
+    <section><h5>標記</h5>${MARKS.map(g=>`<div class="irow"><span class="mklabel">${g.name}</span>${g.items.map(it=>`<button class="mk" data-iact="mark:${g.g}:${it}" aria-pressed="${icons.includes(it)}">${it}</button>`).join("")}</div>`).join("")}</section>
+    <section><h5>備註</h5><textarea id="iNote" placeholder="補充說明、想法或待辦細節">${esc(n.note||"")}</textarea></section>
+    <section><h5>超連結 ${n.link&&safeLink(n.link)?`<a class="btn" style="padding:2px 6px;font-size:12px;color:var(--accent)" href="${esc(safeLink(n.link))}" target="_blank" rel="noopener noreferrer">開啟 ↗</a>`:""}</h5><input type="url" id="iLink" value="${esc(n.link||"")}" placeholder="https://"></section>
+    <section id="iAttSec"><h5>附件 <span style="letter-spacing:0">${files.length?files.length+" 個":""}</span></h5>
+      ${files.length?`<ul class="atts">${files.map(f=>{const u=thumbURL(f);return`<li class="att"><button class="aic ithumb" data-iact="fopen:${f.id}" style="background:${u?"#fff":KCOL[kindOf(f)]}" title="預覽「${esc(f.name)}」">${u?`<img src="${esc(u)}" alt="">`:esc(extLabel(f))}</button>
+        <button class="aname" data-iact="fopen:${f.id}" title="預覽「${esc(f.name)}」">${esc(f.name)}</button>
+        <span class="ameta"><span>${fmtSize(f.size)}</span>${isImg(f)&&f.iw?`<button data-iact="fimg:${f.id}">${n.image===f.id?"改回縮圖":"放大顯示在主題上"}</button>`:""}<button data-iact="fdl:${f.id}">下載</button><button class="danger" data-iact="fdel:${f.id}">移除</button></span></li>`}).join("")}</ul>`:""}
+      <p class="iempty" style="font-size:12px">在主題上按右鍵選「加入附件」，或直接把檔案拖到主題上。</p>
+    </section>
+    <section><h5>外框與概要</h5>
+      ${isRoot?"":`<label class="chk"><input type="checkbox" data-iact="bound" ${n.boundary?"checked":""}> 用外框圈起這個分支</label>
+      ${n.boundary?`<input type="text" id="iBLabel" value="${esc(n.boundary.label||"")}" placeholder="外框標題（可留空）">`:""}`}
+      <label class="chk"><input type="checkbox" data-iact="sum" ${n.summary?"checked":""}> 為這個分支加上概要</label>
+      ${n.summary?`<input type="text" id="iSText" value="${esc(n.summary.text||"")}" placeholder="概要文字">`:""}
+    </section>
+    <section><h5>動作</h5><div class="irow">
+      ${isRoot?"":`<button class="tbtn" data-iact="focus">${focusId===n.id?"離開聚焦":"聚焦這個分支"}</button>`}
+      <button class="tbtn" data-iact="rel">從這裡拉關聯線</button></div></section>
+  </div>`;
+}
+function bindInspector(){
+  const el=$("#insp");
+  on(el,"click",e=>{
+    const b=e.target.closest("[data-iact]"); if(!b||b.tagName==="INPUT") return;
+    const act=b.dataset.iact, n=selId&&get(selId);
+    if(act==="close"){closeInsp();return}
+    if(act.startsWith("theme:")){const t=act.slice(6);mutate(()=>{doc.theme=t});renderInspector(true);return}
+    if(act==="reldel"){removeSel();return}
+    if(act==="relflip"){const r=doc.rels.find(x=>x.id===selRel);if(r){mutate(()=>{const t=r.from;r.from=r.to;r.to=t});renderInspector(true)}return}
+    if(!n) return;
+    if(act==="bold"||act==="italic"){toggleStyle(act);return}
+    if(act.startsWith("color:")){const c=act.slice(6);mutate(()=>{n.style=Object.assign({},n.style,{color:c||undefined})});renderInspector(true);return}
+    if(act.startsWith("mark:")){
+      const parts=act.split(":"),g=parts[1],it=parts.slice(2).join(":"),grp=MARKS.find(x=>x.g===g);
+      mutate(()=>{let ic=(n.icons||[]).slice();const had=ic.includes(it);
+        if(grp.ex) ic=ic.filter(x=>!grp.items.includes(x)); else ic=ic.filter(x=>x!==it);
+        if(!had) ic.push(it);
+        const order=x=>{const gi=MARKS.findIndex(m=>m.items.includes(x));return gi*100+MARKS[gi].items.indexOf(x)};
+        ic.sort((a,b)=>order(a)-order(b)); n.icons=ic.length?ic:undefined});
+      renderInspector(true);return;
+    }
+    if(act==="focus"){setFocus(focusId===n.id?null:n.id);renderInspector(true);return}
+    if(act==="rel"){startRel();return}
+    if(act.startsWith("fopen:")){openFile(n.id,act.slice(6),b.getBoundingClientRect());return}
+    if(act.startsWith("fdl:")){const f=(n.files||[]).find(x=>x.id===act.slice(4));if(f)downloadFile(f);return}
+    if(act.startsWith("fimg:")){const id=act.slice(5);mutate(()=>{n.image=n.image===id?undefined:id});renderInspector(true);return}
+    if(act.startsWith("fdel:")){const id=act.slice(5);mutate(()=>{n.files=(n.files||[]).filter(x=>x.id!==id);if(!n.files.length)n.files=undefined;if(n.image===id)n.image=undefined});renderInspector(true);return}
+  });
+  on(el,"change",e=>{
+    const t=e.target;
+    if(t.dataset.iact==="bound") toggleBoundary();
+    else if(t.dataset.iact==="sum") toggleSummary();
+    else if(t.id==="iFiles"&&selId){attachFiles(selId,[...t.files]);t.value=""}
+  });
+  on(el,"focusin",e=>{if(e.target.matches("#iNote,#iLink,#iBLabel,#iSText,#iRelLabel"))histArmed=true});
+  on(el,"input",e=>{
+    const t=e.target; if(!t.matches("#iNote,#iLink,#iBLabel,#iSText,#iRelLabel")) return;
+    if(histArmed){pushHistory();histArmed=false}
+    if(t.id==="iRelLabel"){const r=doc.rels.find(x=>x.id===selRel);if(r)r.label=t.value}
+    else{const n=get(selId);if(!n)return;
+      if(t.id==="iNote")n.note=t.value||undefined;
+      else if(t.id==="iLink")n.link=t.value.trim()||undefined;
+      else if(t.id==="iBLabel"&&n.boundary)n.boundary.label=t.value;
+      else if(t.id==="iSText"&&n.summary)n.summary.text=t.value;}
+    render(); scheduleSave();
+  });
+  on(el,"dragover",e=>{const d=e.target.closest("#iDrop");if(d&&hasFiles(e)){e.preventDefault();d.classList.add("over")}});
+  on(el,"dragleave",e=>{const d=e.target.closest("#iDrop");if(d)d.classList.remove("over")});
+  on(el,"drop",e=>{const d=e.target.closest("#iDrop");if(d&&selId&&hasFiles(e)){e.preventDefault();d.classList.remove("over");attachFiles(selId,[...e.dataTransfer.files])}});
+}
+const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");
+function startRel(){
+  if(!selId) return; if(viewMode!=="map") setView("map");
+  relFrom=selId; $("#relhint").hidden=false; stage.classList.add("relmode"); render();
+}
+
+/* ================= 搜尋 ================= */
+function openSearch(){
+  if(viewMode!=="map") setView("map");
+  $("#search").hidden=false; const q=$("#sQ"); q.focus(); q.select(); updateUI();
+}
+function closeSearch(){$("#search").hidden=true;hits=[];hitIdx=-1;render();stage.focus()}
+function runSearch(){
+  const q=$("#sQ").value.trim().toLowerCase(); hits=[]; hitIdx=-1;
+  if(q){(function walk(n){if(n.text.toLowerCase().includes(q)||(n.note||"").toLowerCase().includes(q)||(n.files||[]).some(f=>f.name.toLowerCase().includes(q)))hits.push(n.id);n.children.forEach(walk)})(doc.root)}
+  $("#sCount").textContent=q?(hits.length?`${hits.length} 筆`:"沒有符合"):"";
+  if(hits.length) nextHit(1); else render();
+}
+function nextHit(dir){
+  if(!hits.length) return;
+  hitIdx=(hitIdx+dir+hits.length)%hits.length; const id=hits[hitIdx];
+  let p=INFO.get(id).parent; while(p){p.collapsed=false;p=INFO.get(p.id).parent}
+  if(focusId&&!inSubtree(get(focusId),id)) focusId=null;
+  selId=id; selRel=null; render(); ensureVisible(id);
+  $("#sCount").textContent=`${hitIdx+1} / ${hits.length}`;
+}
+
+/* ================= 大綱檢視 ================= */
+let oArmed=null;
+function setView(v){
+  if(editing) commitEdit();
+  if(relFrom&&v!=="map") cancelRel();
+  viewMode=v; $("#stage").hidden=v!=="map"; $("#outline").hidden=v!=="outline";
+  if(v==="outline"){$("#search").hidden=true;renderOutline(selId)}
+  else{render();requestAnimationFrame(()=>{applyView();if(selId)ensureVisible(selId)})}
+  updateUI();
+}
+const dispOutline=n=>n.text.replace(/\n/g," ↵ ");
+function renderOutline(focusAfter){
+  buildIndex();
+  const rows=[];(function walk(n,d){rows.push([n,d]);if(!n.collapsed)n.children.forEach(c=>walk(c,d+1))})(doc.root,0);
+  $("#outline").innerHTML=`<div class="oin"><p class="otip"><kbd>Enter</kbd> 新增同層　<kbd>Tab</kbd> 降一層　<kbd>Shift</kbd>+<kbd>Tab</kbd> 升一層　<kbd>↑</kbd><kbd>↓</kbd> 移動　空白行按 <kbd>Backspace</kbd> 刪除。這裡的修改會同步到圖形。</p>`+
+    rows.map(([n,d])=>`<div class="orow${d===0?" oroot":""}" data-id="${n.id}" style="--d:${d}">${n.children.length&&d>0?`<button class="ocar" data-oc="${n.id}" tabindex="-1" title="${n.collapsed?"展開":"收合"}">${n.collapsed?"▸":"▾"}</button>`:`<span class="ocar"></span>`}${d>0?`<span class="odot" style="background:${colOf(n.id)}"></span>`:""}<input class="otext" data-oid="${n.id}" value="${esc(dispOutline(n))}" aria-label="主題文字"></div>`).join("")+`</div>`;
+  if(focusAfter){const i=$(`.otext[data-oid="${focusAfter}"]`);if(i){i.focus();const L=i.value.length;i.setSelectionRange(L,L)}}
+}
+function bindOutline(){
+  const o=$("#outline");
+  on(o,"click",e=>{const c=e.target.closest("[data-oc]");if(c){const n=get(c.dataset.oc);if(n){mutate(()=>{n.collapsed=!n.collapsed});renderOutline(c.dataset.oc)}}});
+  on(o,"focusin",e=>{const id=e.target.dataset&&e.target.dataset.oid;if(id){oArmed=id;selId=id;selRel=null}});
+  on(o,"input",e=>{
+    const id=e.target.dataset.oid; if(!id) return; const n=get(id); if(!n) return;
+    if(oArmed===id){pushHistory();oArmed=null}
+    n.text=e.target.value.replace(/ ↵ /g,"\n"); mcache.clear(); scheduleSave(); updateUI();
+  });
+  on(o,"keydown",e=>{
+    const id=e.target.dataset&&e.target.dataset.oid; if(!id||e.isComposing||e.keyCode===229) return;
+    const n=get(id),inf=INFO.get(id),mod=e.metaKey||e.ctrlKey;
+    if(!n) return;
+    if(mod&&e.key.toLowerCase()==="z"){e.preventDefault();e.shiftKey?redo():undo();renderOutline(INFO.has(id)?id:null);return}
+    if(e.key==="Enter"){
+      e.preventDefault();
+      if(!inf.parent||(n.children.length&&!n.collapsed)){const c=N(defaultText(inf.depth+1));mutate(()=>{n.collapsed=false;n.children.unshift(c)});renderOutline(c.id);const i=$(`.otext[data-oid="${c.id}"]`);if(i)i.select()}
+      else{const c=N(defaultText(inf.depth));mutate(()=>{const a=inf.parent.children;a.splice(a.indexOf(n)+1,0,c)});renderOutline(c.id);const i=$(`.otext[data-oid="${c.id}"]`);if(i)i.select()}
+      return;
+    }
+    if(e.key==="Tab"){
+      e.preventDefault(); if(!inf.parent) return;
+      const arr=inf.parent.children, idx=arr.indexOf(n);
+      if(e.shiftKey){const gp=INFO.get(inf.parent.id).parent;if(!gp)return;
+        mutate(()=>{arr.splice(idx,1);const ga=gp.children;ga.splice(ga.indexOf(inf.parent)+1,0,n)})}
+      else{if(idx<1)return;const ps=arr[idx-1];mutate(()=>{arr.splice(idx,1);ps.collapsed=false;ps.children.push(n)})}
+      renderOutline(id); return;
+    }
+    if(e.key==="Backspace"&&e.target.value===""&&inf.parent){
+      e.preventDefault(); const ins=$$(".otext"),i=ins.indexOf(e.target),prev=ins[i-1];
+      const pid=prev?prev.dataset.oid:null; mutate(()=>{const a=inf.parent.children;a.splice(a.indexOf(n),1)}); renderOutline(pid); return;
+    }
+    if(e.key==="ArrowUp"||e.key==="ArrowDown"){
+      e.preventDefault(); const ins=$$(".otext"),i=ins.indexOf(e.target),t=ins[i+(e.key==="ArrowUp"?-1:1)];
+      if(t){t.focus();const L=t.value.length;t.setSelectionRange(L,L)}
+    }
+  });
+}
+
+/* ================= 匯入解析 ================= */
+function parseText(txt){
+  const lines=txt.replace(/\r/g,"").split("\n").filter(l=>l.trim());
+  const ind=l=>l.match(/^[ \t]*/)[0].replace(/\t/g,"    ").length;
+  const nz=lines.filter(l=>!/^\s*#/.test(l)).map(ind).filter(x=>x>0), unit=nz.length?Math.min(...nz):2;
+  const roots=[],stack=[]; let head=-1,last=null;
+  for(const raw of lines){
+    const q=raw.match(/^\s*>\s?(.*)$/);
+    if(q&&last){last.note=(last.note?last.note+"\n":"")+q[1];continue}
+    let lv,t; const h=raw.match(/^\s*(#{1,6})\s+(.*)$/);
+    if(h){lv=h[1].length-1;head=lv;t=h[2]}
+    else{lv=(head>=0?head+1:0)+Math.round(ind(raw)/unit);t=raw.trim().replace(/^([-*+]|\d+[.)])\s+/,"").replace(/^\[[ xX]\]\s+/,"")}
+    t=t.trim(); let link;
+    const mk=t.match(/^\[(.+)\]\((\S+)\)$/); if(mk){t=mk[1];link=mk[2]}
+    const node=N(t||"主題"); if(link) node.link=link;
+    while(stack.length&&stack[stack.length-1].lv>=lv) stack.pop();
+    if(stack.length) stack[stack.length-1].n.children.push(node); else roots.push(node);
+    stack.push({lv,n:node}); last=node;
+  }
+  return roots;
+}
+function normNode(o,idMap,fileMap){
+  if(!o||typeof o!=="object") throw new Error("bad");
+  const n={id:uid(),text:String(o.text??o.title??"主題"),collapsed:!!o.collapsed,children:[]};
+  if(o.id) idMap[o.id]=n.id;
+  if(o.style&&typeof o.style==="object"){const c=typeof o.style.color==="string"&&/^#[0-9a-f]{3,8}$/i.test(o.style.color)?o.style.color:undefined;if(o.style.bold||o.style.italic||c)n.style={bold:!!o.style.bold,italic:!!o.style.italic,color:c}}
+  if(Array.isArray(o.icons)&&o.icons.length) n.icons=o.icons.filter(x=>typeof x==="string").slice(0,12);
+  if(o.note) n.note=String(o.note); if(o.link) n.link=String(o.link);
+  if(Array.isArray(o.files)&&o.files.length) n.files=o.files.filter(f=>f&&f.id).map(f=>{const id=fileMap[f.id]||(fileMap[f.id]=uid());return{id,name:String(f.name||"檔案"),type:String(f.type||""),size:+f.size||0,iw:+f.iw||0,ih:+f.ih||0}});
+  if(o.image&&fileMap[o.image]) n.image=fileMap[o.image];
+  if(o.boundary) n.boundary={label:String(o.boundary.label||"")};
+  if(o.summary) n.summary={text:String(o.summary.text||"概要")};
+  n.children=(Array.isArray(o.children)?o.children:[]).map(c=>normNode(c,idMap,fileMap));
+  return n;
+}
+async function importAny(txt){
+  txt=txt.trim(); if(!txt) throw new Error("empty");
+  if(txt[0]==="{"){
+    const o=JSON.parse(txt), rootIn=o.root||o, idMap={}, fileMap={};
+    const root=normNode(rootIn,idMap,fileMap);
+    const rels=(Array.isArray(o.rels)?o.rels:[]).filter(r=>idMap[r.from]&&idMap[r.to]).map(r=>({id:uid(),from:idMap[r.from],to:idMap[r.to],label:String(r.label||"")}));
+    let restored=0;
+    if(o.files&&typeof o.files==="object"){
+      for(const [old,f] of Object.entries(o.files)){const nid=fileMap[old];if(!nid||!f||!f.data)continue;
+        try{const b=dataURLToBlob(f.data);await putBlob(nid,b);urlCache.set(nid,URL.createObjectURL(b));restored++}catch(e){}}
+    }
+    return{doc:fixDoc({id:uid(),title:String(o.title||root.text||"匯入的心智圖"),layout:o.layout,theme:o.theme,updated:Date.now(),root,rels}),restored};
+  }
+  const roots=parseText(txt); if(!roots.length) throw new Error("empty");
+  const root=roots.length===1?roots[0]:N("匯入的心智圖",roots);
+  return{doc:fixDoc({id:uid(),title:root.text.split("\n")[0].slice(0,40),layout:"mindmap",theme:"classic",updated:Date.now(),root,rels:[]}),restored:0};
+}
+
+/* ================= 匯出 ================= */
+async function saveFile(name,data,mime){
+  if(downloads){
+    try{await downloads.save({filename:name,data});return"saved"}
+    catch(e){const c=e&&e.code;return c==="declined"?"declined":c==="rate_limited"?"busy":c==="rejected_extension"?"ext":"fail"}
+  }
+  if(!IN_ARTIFACT){
+    const blob=data instanceof Blob?data:new Blob([data],{type:mime||"application/octet-stream"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return"saved";
+  }
+  return"fail";
+}
+const safeName=s=>(s||"心智圖").replace(/[\\/:*?"<>|\n]+/g,"_").slice(0,80);
+function exportDocObj(){return{app:"zhisi",version:2,title:doc.title,layout:doc.layout,theme:doc.theme,root:doc.root,rels:doc.rels}}
+function allFiles(n,out=[]){(n.files||[]).forEach(f=>out.push(f));n.children.forEach(c=>allFiles(c,out));return out}
+async function filesAsData(ids){const o={};for(const id of ids){const b=await getBlob(id);if(b)o[id]=await blobToDataURL(b)}return o}
+async function exportJSON(withFiles){
+  const o=exportDocObj();
+  if(withFiles){const fs=allFiles(doc.root),data=await filesAsData(fs.map(f=>f.id));o.files={};fs.forEach(f=>{if(data[f.id])o.files[f.id]={name:f.name,data:data[f.id]}})}
+  return JSON.stringify(o,null,withFiles?0:2);
+}
+function toMD(n,d=0){
+  const t=dispText(n).replace(/\n/g," "),label=n.link&&safeLink(n.link)?`[${t}](${safeLink(n.link)})`:t,pre=d===0?"":"  ".repeat(d);
+  let s=d===0?`# ${label}\n\n`:`${"  ".repeat(d-1)}- ${label}\n`;
+  if(n.note&&n.note.trim()) s+=n.note.trim().split("\n").map(l=>`${pre}> ${l}`).join("\n")+"\n";
+  if(n.summary) s+=`${pre}> 概要：${n.summary.text}\n`;
+  if(n.files&&n.files.length) s+=`${pre}> 附件：${n.files.map(f=>f.name).join("、")}\n`;
+  n.children.forEach(c=>s+=toMD(c,d+1));
+  if(d===0&&doc.rels.length) s+="\n## 關聯\n\n"+doc.rels.map(r=>`- ${get(r.from).text.replace(/\n/g," ")} → ${get(r.to).text.replace(/\n/g," ")}${r.label?`（${r.label}）`:""}`).join("\n")+"\n";
+  return s;
+}
+async function buildSVG(){
+  exportURLs=new Map();
+  for(const p of P.values()) if(p.m.img){const b=await getBlob(p.m.img.f.id);if(b)exportURLs.set(p.m.img.f.id,await blobToDataURL(b))}
+  for(const p of P.values()) if(p.m.thumbs) for(const f of p.m.thumbs.list){if(!thumbCache.has(f.id)&&["img","pdf"].includes(kindOf(f))){const u=await genThumb(f);if(u)thumbCache.set(f.id,u)}}
+  exporting=true; render();
+  const world=$("#world"), bb=world.getBBox(), cl=world.cloneNode(true);
+  exporting=false; render();
+  cl.removeAttribute("transform"); cl.removeAttribute("id");
+  const pad=36,x=Math.floor(bb.x-pad),y=Math.floor(bb.y-pad),w=Math.ceil(bb.width+pad*2),h=Math.ceil(bb.height+pad*2);
+  const cs=getComputedStyle(document.documentElement), rv=s=>s.replace(/var\((--[\w-]+)\)/g,(m,v)=>cs.getPropertyValue(v).trim()||"#888");
+  const ser=new XMLSerializer();
+  const defs=ser.serializeToString($("#svg").querySelector("defs")), body=ser.serializeToString(cl);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}">${rv(defs)}<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${cs.getPropertyValue("--bg").trim()}"/><g font-family='${FAMILY}'>${rv(body)}</g></svg>`;
+  return{svg,w,h};
+}
+async function svgToPng(svg,w,h,scale=2){
+  let s=scale; while(w*s*h*s>48e6&&s>.6) s/=1.4;
+  const url=URL.createObjectURL(new Blob([svg],{type:"image/svg+xml"}));
+  try{
+    const img=new Image(); await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src=url});
+    const c=document.createElement("canvas");c.width=Math.round(w*s);c.height=Math.round(h*s);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    return await new Promise(r=>c.toBlob(r,"image/png"));
+  }finally{URL.revokeObjectURL(url)}
+}
+const LIBS={
+  pdfw:["https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js","https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js","https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"],
+  pdf:["https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js","https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js","https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"],
+  mammoth:["https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js","https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js","https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js"],
+  xlsx:["https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js","https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"],
+  jspdf:["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"],
+};
+const libP={};
+function lib(name,ready){
+  if(ready()) return Promise.resolve();
+  if(!libP[name]) libP[name]=(async()=>{for(const u of LIBS[name]){try{await loadScript(u);if(ready())return}catch(e){}}delete libP[name];throw new Error("load")})();
+  return libP[name];
+}
+async function loadPdf(){
+  await lib("pdfw",()=>window.pdfjsWorker); await lib("pdf",()=>window.pdfjsLib);
+  try{window.pdfjsLib.GlobalWorkerOptions.workerSrc=LIBS.pdfw[0]}catch(e){}
+  return window.pdfjsLib;
+}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("load"));document.head.appendChild(s)})}
+async function doExport(kind){
+  const msg=$("#ioMsg1"); msg.className="msg"; msg.textContent="產生中…"; $("#ioOut").hidden=true;
+  const base=safeName(doc.title); let r;
+  try{
+    if(viewMode!=="map"&&["png","svg","pdf"].includes(kind)){setView("map");await new Promise(r=>requestAnimationFrame(r))}
+    if(kind==="json") r=await saveFile(base+".json",await exportJSON($("#ioWithFiles").checked));
+    else if(kind==="md"){const md=toMD(doc.root);r=await saveFile(base+".md",md);if(r==="fail"){showOut(md);return}}
+    else{
+      const {svg,w,h}=await buildSVG();
+      if(kind==="svg") r=await saveFile(base+".svg",svg);
+      else{
+        const png=await svgToPng(svg,w,h,2);
+        if(kind==="png") r=await saveFile(base+".png",png);
+        else{
+          await lib("jspdf",()=>window.jspdf);
+          const pw=w*.75,ph=h*.75, pdf=new window.jspdf.jsPDF({orientation:pw>=ph?"landscape":"portrait",unit:"pt",format:[pw,ph],compress:true});
+          pdf.addImage(await blobToDataURL(png),"PNG",0,0,pw,ph); pdf.setProperties({title:doc.title});
+          r=await saveFile(base+".pdf",pdf.output("blob"));
+        }
+      }
+    }
+    msg.textContent=r==="saved"?"已下載":r==="declined"?"已取消下載":r==="busy"?"已有下載視窗開著，請稍後再試":"這裡無法下載檔案";
+    if(r==="fail") msg.className="msg err";
+  }catch(err){msg.className="msg err";msg.textContent="匯出失敗："+(err&&err.message==="load"?"無法載入 PDF 元件，請檢查網路":"請再試一次")}
+}
+function showOut(t){const o=$("#ioOut");o.value=t;o.hidden=false;o.focus();o.select();$("#ioMsg1").textContent="無法直接下載，內容已放在下方並選取，請複製保存"}
+
+/* ================= 嵌入檢視器 ================= */
+async function buildViewerHTML(){
+  const opts={theme:$("#eTheme").value,collapse:$("#eCollapse").checked};
+  const d=exportDocObj();
+  let files={};
+  if($("#eFiles").checked) files=await filesAsData(allFiles(doc.root).map(f=>f.id));
+  const thumbs={};
+  for(const f of allFiles(doc.root)) if(["img","pdf"].includes(kindOf(f))){const u=thumbCache.get(f.id)||await genThumb(f);if(u)thumbs[f.id]=u}
+  const json=JSON.stringify({doc:d,opts,files,thumbs}).replace(/</g,"\\u003c");
+  const css=$("#zhisi-style").textContent, js=$("#zhisi-app").textContent, endS="<"+"/script>";
+  const th=opts.theme==="light"||opts.theme==="dark"?` data-theme="${opts.theme}"`:"";
+  return`<!doctype html><html lang="zh-Hant"${th}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(doc.title)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap"><style id="zhisi-style">${css}</style></head><body>${VIEWER_MARKUP}<script type="application/json" id="embed-data">${json}${endS}<script id="zhisi-app">${js}${endS}</body></html>`;
+}
+async function copyText(t,msgEl,ok){
+  try{await navigator.clipboard.writeText(t);msgEl.className="msg";msgEl.textContent=ok}
+  catch(e){const c=$("#eCode");c.value=t;c.focus();c.select();msgEl.className="msg";msgEl.textContent="已放到下方文字框並選取，請按 ⌘/Ctrl+C 複製"}
+}
+const iframeStyle=()=>`width:100%;height:${Math.max(200,+$("#eH").value||520)}px;border:1px solid #d6dce5;border-radius:10px`;
+function showCard(id){
+  const c=$("#vcard"); if(!c) return;
+  const n=id&&get(id);
+  if(!n||!((n.note&&n.note.trim())||n.link||(n.files&&n.files.length)||n.summary)){c.hidden=true;return}
+  const files=n.files||[];
+  c.innerHTML=`<h4><span>${esc(dispText(n).split("\n")[0])}</span><button data-vclose title="關閉">✕</button></h4>
+    ${n.note?`<p class="note">${esc(n.note)}</p>`:""}
+    ${n.summary?`<p class="note">概要：${esc(n.summary.text)}</p>`:""}
+    ${n.link&&safeLink(n.link)?`<p><a href="${esc(safeLink(n.link))}" target="_blank" rel="noopener noreferrer">${esc(n.link)}</a></p>`:""}
+    ${files.length?`<div>附件（點檔名可預覽）</div><ul>${files.map(f=>`<li><button class="lnk" data-vpeek="${f.id}" data-pn="${n.id}">${esc(f.name)}</button> <span style="color:var(--muted)">${fmtSize(f.size)}</span></li>`).join("")}</ul>`:""}`;
+  c.hidden=false;
+}
+
+/* ================= 附件預覽（原地放大） ================= */
+let peek=null, peekToken=0;
+function peekTarget(){const r=stageRect(),W=Math.max(200,Math.min(r.width-24,1000)),H=Math.max(200,r.height-24);return{left:(r.width-W)/2,top:12,width:W,height:H}}
+function setBox(el,b){el.style.left=b.left+"px";el.style.top=b.top+"px";el.style.width=b.width+"px";el.style.height=b.height+"px"}
+const peekFile=()=>{const n=peek&&get(peek.nid);return n&&(n.files||[])[peek.idx]};
+const nodeRect=id=>{const el=document.querySelector(`.node[data-id="${id}"]`);return el?el.getBoundingClientRect():null};
+const thumbRect=fid=>{const el=document.querySelector(`[data-thumb="${fid}"]`);return el?el.getBoundingClientRect():null};
+function openPeek(nid,fid,from){
+  if(!VIEWER&&viewMode!=="map") setView("map");
+  const n=get(nid); if(!n) return; const idx=(n.files||[]).findIndex(f=>f.id===fid); if(idx<0) return;
+  closeCtx(); peek={nid,idx};
+  const el=$("#peek"),bg=$("#peekBg"),r=stageRect();
+  bg.hidden=false; el.hidden=false; el.classList.remove("anim");
+  if(from&&!matchMedia("(prefers-reduced-motion: reduce)").matches){
+    setBox(el,{left:from.left-r.left,top:from.top-r.top,width:Math.max(from.width,40),height:Math.max(from.height,40)});
+    el.getBoundingClientRect(); el.classList.add("anim");
+  }
+  setBox(el,peekTarget()); setTimeout(()=>el.classList.remove("anim"),320);
+  fillPeek(); $("#pkClose").focus({preventScroll:true});
+}
+function closePeek(){if(!peek)return;peek=null;peekToken++;$("#peek").hidden=true;$("#peekBg").hidden=true;$("#pkBody").innerHTML="";if(stage)stage.focus({preventScroll:true})}
+function peekNav(d){if(!peek)return;const n=get(peek.nid),L=((n&&n.files)||[]).length;if(L<2)return;peek.idx=(peek.idx+d+L)%L;fillPeek()}
+function emptyHTML(f,msg,dl){return`<div class="pk-empty"><span class="pk-tile" style="background:${KCOL[kindOf(f)]}">${esc(extLabel(f))}</span><div><b>${esc(f.name)}</b><br>${esc(msg)}</div>${dl?`<button class="btn primary" data-pkdl>下載檔案</button>`:""}</div>`}
+function sanitize(html){
+  const d=new DOMParser().parseFromString(String(html),"text/html");
+  d.querySelectorAll("script,iframe,object,embed,link,style,meta,base,form").forEach(x=>x.remove());
+  d.querySelectorAll("*").forEach(el=>[...el.attributes].forEach(a=>{const nm=a.name.toLowerCase();if(nm.startsWith("on")||((nm==="href"||nm==="src"||nm==="xlink:href")&&/^\s*(javascript|vbscript):/i.test(a.value)))el.removeAttribute(a.name)}));
+  d.querySelectorAll("a[href]").forEach(a=>{a.setAttribute("target","_blank");a.setAttribute("rel","noopener noreferrer")});
+  return d.body.innerHTML;
+}
+async function fillPeek(){
+  const f=peekFile(); if(!f){closePeek();return}
+  const n=get(peek.nid),L=n.files.length,tok=++peekToken,body=$("#pkBody"),k=kindOf(f),e=extOf(f.name),live=()=>tok===peekToken;
+  const u=thumbURL(f),t=$("#pkTile"); t.style.background=u?"#fff":KCOL[k]; t.innerHTML=u?`<img src="${esc(u)}" alt="">`:esc(extLabel(f));
+  $("#pkName").textContent=f.name;
+  $("#pkMeta").textContent=`${fmtSize(f.size)}${f.iw?` · ${f.iw}×${f.ih}`:""}${L>1?` · 第 ${peek.idx+1} / ${L} 個附件`:""}`;
+  $("#pkPrev").hidden=L<2; $("#pkNext").hidden=L<2;
+  body.scrollTop=0; body.innerHTML=`<div class="pk-load">載入中…</div>`;
+  const blob=await getBlob(f.id); if(!live()) return;
+  if(!blob){body.innerHTML=emptyHTML(f,VIEWER?"作者沒有把這個附件內嵌到檢視器中。":"這個附件不在目前的瀏覽器中。請在原本的電腦匯出含附件的 JSON 備份，再到這裡匯入。",false);return}
+  try{
+    if(k==="img"){
+      const url=fileUrl(f.id)||URL.createObjectURL(blob);
+      body.innerHTML=`<div class="pk-img"><img src="${esc(url)}" alt="${esc(f.name)}" title="點一下切換原始大小"></div>`;
+      const box=body.firstChild; box.firstChild.onclick=()=>box.classList.toggle("full");
+    }else if(k==="pdf"){
+      const PL=await loadPdf(); if(!live()) return;
+      const pdf=await PL.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise; if(!live()) return;
+      body.innerHTML=`<div class="pk-pages"></div>`; const wrap=body.firstChild;
+      const W=Math.max(160,Math.min(body.clientWidth-40,900)), dpr=Math.min(2,window.devicePixelRatio||1), max=Math.min(pdf.numPages,80);
+      for(let i=1;i<=max;i++){
+        const page=await pdf.getPage(i); if(!live()) return;
+        const v1=page.getViewport({scale:1}), vp=page.getViewport({scale:W/v1.width*dpr});
+        const c=document.createElement("canvas"); c.width=Math.ceil(vp.width); c.height=Math.ceil(vp.height); c.style.width=W+"px";
+        wrap.appendChild(c); const g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height);
+        await page.render({canvasContext:g,viewport:vp}).promise;
+      }
+      if(pdf.numPages>max) wrap.insertAdjacentHTML("beforeend",`<p class="pk-note">只預覽前 ${max} 頁（共 ${pdf.numPages} 頁），完整內容請下載後開啟。</p>`);
+    }else if(k==="word"&&e==="docx"){
+      await lib("mammoth",()=>window.mammoth); if(!live()) return;
+      const r=await window.mammoth.convertToHtml({arrayBuffer:await blob.arrayBuffer()}); if(!live()) return;
+      body.innerHTML=`<article class="pk-doc">${sanitize(r.value)||"<p>（這份文件沒有文字內容）</p>"}</article>`;
+    }else if(k==="excel"&&e!=="numbers"){
+      await lib("xlsx",()=>window.XLSX); if(!live()) return;
+      const X=window.XLSX, wb=X.read(new Uint8Array(await blob.arrayBuffer()),{type:"array"}); if(!live()) return;
+      body.innerHTML=`${wb.SheetNames.length>1?`<div class="pk-tabs">${wb.SheetNames.map((nm,i)=>`<button data-sh="${i}">${esc(nm)}</button>`).join("")}</div>`:""}<div class="pk-sheet"></div>`;
+      const show=i=>{body.querySelectorAll("[data-sh]").forEach((b,j)=>b.setAttribute("aria-pressed",j===i));body.querySelector(".pk-sheet").innerHTML=sanitize(X.utils.sheet_to_html(wb.Sheets[wb.SheetNames[i]],{header:"",footer:""}))||"<p>（空白工作表）</p>"};
+      body.querySelectorAll("[data-sh]").forEach(b=>b.onclick=()=>show(+b.dataset.sh)); show(0);
+    }else if(k==="text"){
+      const tx=await blob.text(); if(!live()) return;
+      body.innerHTML=`<pre class="pk-text">${esc(tx.length>300000?tx.slice(0,300000)+"\n\n…（內容過長，只顯示前段）":tx)}</pre>`;
+    }else if(k==="video"||k==="audio"){
+      const url=fileUrl(f.id)||URL.createObjectURL(blob);
+      body.innerHTML=`<div class="pk-media">${k==="video"?`<video controls src="${esc(url)}"></video>`:`<audio controls src="${esc(url)}"></audio>`}</div>`;
+    }else body.innerHTML=emptyHTML(f,k==="word"?"舊版 Word（.doc）無法在這裡預覽，請下載後開啟，或另存成 .docx 再加入。":k==="ppt"?"簡報檔無法在這裡預覽，請下載後開啟；想預覽可以另存成 PDF 再加入。":"這種檔案無法在這裡預覽，可以下載後用原本的程式開啟。",true);
+  }catch(err){if(live())body.innerHTML=emptyHTML(f,err&&err.message==="load"?"預覽元件無法載入，請確認網路連線後再試一次。":"這個檔案無法預覽，可能已損毀或格式不支援。",true)}
+}
+function bindPeek(){
+  on("#peekBg","click",closePeek); on("#pkClose","click",closePeek);
+  on("#pkPrev","click",()=>peekNav(-1)); on("#pkNext","click",()=>peekNav(1));
+  const dl=()=>{const f=peekFile();if(f)downloadFile(f)};
+  on("#pkDl","click",dl); on("#pkBody","click",e=>{if(e.target.closest("[data-pkdl]"))dl()});
+}
+
+/* ================= 右鍵選單 ================= */
+let ctxState=null, attachTarget=null, lpAt=0;
+const ctxIsOpen=()=>{const el=$("#ctx");return!!el&&!el.hidden};
+function showCtx(cx,cy,items){
+  const el=$("#ctx"),r=stageRect();
+  el.innerHTML=items.map(it=>it==="-"?'<div class="sep"></div>':`<button role="menuitem" data-c="${it.k}"${it.dis?" disabled":""} class="${it.danger?"danger":""}${it.lead?" lead":""}"><span>${esc(it.t)}</span>${it.kb?`<kbd>${esc(it.kb)}</kbd>`:""}</button>`).join("");
+  el.hidden=false;
+  let x=cx-r.left,y=cy-r.top; const w=el.offsetWidth,h=el.offsetHeight;
+  if(x+w>r.width-8) x=Math.max(8,x-w); if(y+h>r.height-8) y=Math.max(8,r.height-h-8);
+  el.style.left=x+"px"; el.style.top=y+"px";
+  const first=el.querySelector("button:not(:disabled)"); if(first) first.focus({preventScroll:true});
+}
+function closeCtx(){const el=$("#ctx");if(el&&!el.hidden){el.hidden=true;ctxState=null}}
+function ctxNodeMenu(id,cx,cy){
+  const n=get(id); if(!n) return;
+  if(selId!==id||selRel){selId=id;selRel=null;render()}
+  const isRoot=n===doc.root, nf=(n.files||[]).length;
+  ctxState={kind:"node",nid:id};
+  showCtx(cx,cy,[
+    {k:"attach",t:"📎 加入附件…",lead:1},
+    ...(nf?[{k:"peekfirst",t:`預覽附件（${nf} 個）`}]:[]),
+    "-",
+    {k:"child",t:"新增子主題",kb:"Tab"},{k:"sib",t:"新增同層主題",kb:"Enter",dis:isRoot||id===focusId},{k:"edit",t:"編輯文字",kb:"F2"},
+    "-",
+    {k:"bound",t:(n.boundary?"✓ ":"")+"外框",dis:isRoot},{k:"sum",t:(n.summary?"✓ ":"")+"概要"},{k:"rel",t:"拉關聯線"},
+    {k:"focus",t:focusId===id?"離開聚焦":"聚焦這個分支",dis:isRoot},
+    ...(n.children.length&&!isRoot?[{k:"toggle",t:n.collapsed?"展開分支":"收合分支",kb:"Space"}]:[]),
+    "-",
+    {k:"copy",t:"複製",kb:MK+"C"},{k:"cut",t:"剪下",kb:MK+"X",dis:isRoot},{k:"paste",t:"貼上",kb:MK+"V",dis:!clip},
+    "-",
+    {k:"insp",t:"屬性面板…"},{k:"del",t:"刪除",kb:"Delete",danger:1,dis:isRoot}
+  ]);
+}
+function ctxFor(t,cx,cy){
+  if(relFrom) cancelRel();
+  const th=t.closest&&t.closest("[data-thumb]"), relEl=t.closest&&t.closest("[data-rel]"), g=t.closest&&(t.closest(".node")||t.closest("[data-sum]"));
+  if(th){
+    const nid=th.dataset.tn,fid=th.dataset.thumb,n=get(nid),f=n&&(n.files||[]).find(x=>x.id===fid); if(!f) return;
+    if(selId!==nid||selRel){selId=nid;selRel=null;render()}
+    ctxState={kind:"file",nid,fid};
+    showCtx(cx,cy,[{k:"fpeek",t:"預覽",lead:1},{k:"fdl",t:"下載"},...(isImg(f)&&f.iw?[{k:"fimg",t:"放大顯示在主題上"}]:[]),"-",{k:"attach",t:"📎 再加入附件…"},"-",{k:"fdel",t:"移除這個附件",danger:1}]);
+    return;
+  }
+  if(relEl){
+    selRel=relEl.dataset.rel; selId=null; render(); ctxState={kind:"rel"};
+    showCtx(cx,cy,[{k:"rellabel",t:"編輯說明文字…"},{k:"relflip",t:"反轉方向"},"-",{k:"reldel",t:"刪除關聯線",kb:"Delete",danger:1}]);
+    return;
+  }
+  if(g){ctxNodeMenu(g.dataset.id||g.dataset.sum,cx,cy);return}
+  ctxState={kind:"canvas"};
+  showCtx(cx,cy,[{k:"fit",t:"符合畫面",kb:MK+"0"},{k:"expandAll",t:"全部展開"},{k:"collapseAll",t:"收合到第一層"},...(focusId?[{k:"unfocus",t:"離開聚焦",kb:"Esc"}]:[]),"-",{k:"attachRoot",t:"📎 加入附件到中心主題…"},{k:"paste",t:"貼上到中心主題",kb:MK+"V",dis:!clip}]);
+}
+function ctxAction(c){
+  const st=ctxState||{}; closeCtx(); stage.focus({preventScroll:true});
+  const n=st.nid&&get(st.nid), f=n&&st.fid&&(n.files||[]).find(x=>x.id===st.fid);
+  switch(c){
+    case"attach": attachTarget=st.nid; $("#ctxFile").click(); break;
+    case"attachRoot": attachTarget=(focusId||doc.root.id); $("#ctxFile").click(); break;
+    case"peekfirst": if(n&&n.files&&n.files.length) openPeek(n.id,n.files[0].id,thumbRect(n.files[0].id)||nodeRect(n.id)); break;
+    case"child": addChild(); break;
+    case"sib": addSibling(); break;
+    case"edit": if(n) startEdit(n.id,{selectAll:true}); break;
+    case"bound": toggleBoundary(); break;
+    case"sum": toggleSummary(); break;
+    case"rel": startRel(); break;
+    case"focus": if(n) setFocus(focusId===n.id?null:n.id); break;
+    case"unfocus": setFocus(null); break;
+    case"toggle": if(n) toggle(n.id); break;
+    case"copy": copySel(false); break;
+    case"cut": copySel(true); break;
+    case"paste": if(clip){if(!n)selId=focusId||doc.root.id;pasteNodes([reid(clone(clip))])} break;
+    case"insp": openInsp(true); break;
+    case"del": removeSel(); break;
+    case"fpeek": if(f) openPeek(n.id,f.id,thumbRect(f.id)); break;
+    case"fdl": if(f) downloadFile(f); break;
+    case"fimg": if(f){mutate(()=>{n.image=f.id});renderInspector(true)} break;
+    case"fdel": if(f){mutate(()=>{n.files=n.files.filter(x=>x.id!==f.id);if(!n.files.length)n.files=undefined;if(n.image===f.id)n.image=undefined});renderInspector(true)} break;
+    case"rellabel": openInsp(true); {const i=$("#iRelLabel");if(i)i.focus()} break;
+    case"relflip": {const r=doc.rels.find(x=>x.id===selRel);if(r){mutate(()=>{const t=r.from;r.from=r.to;r.to=t});renderInspector(true)}} break;
+    case"reldel": removeSel(); break;
+    case"fit": fit(); break;
+    case"expandAll": mutate(()=>{(function w(x){x.collapsed=false;x.children.forEach(w)})(doc.root)}); fit(); break;
+    case"collapseAll": mutate(()=>{doc.root.children.forEach(x=>{if(x.children.length)x.collapsed=true})}); fit(); break;
+  }
+}
+function bindCtx(){
+  on("#ctx","click",e=>{const b=e.target.closest("[data-c]");if(b&&!b.disabled)ctxAction(b.dataset.c)});
+  on("#ctxFile","change",e=>{const fs=[...e.target.files];e.target.value="";if(fs.length&&attachTarget&&get(attachTarget))attachFiles(attachTarget,fs)});
+  on(stage,"contextmenu",e=>{
+    if(e.target.closest(".peek,.ctx,.search,.crumb,#editor")) return;
+    e.preventDefault(); if(Date.now()-lpAt<900) return;
+    if(editing) commitEdit();
+    ctxFor(e.target,e.clientX,e.clientY);
+  });
+  on(document,"pointerdown",e=>{if(!(e.target.closest&&e.target.closest(".ctx")))closeCtx()},true);
+}
+
+/* ================= 文件管理 ================= */
+function openDoc(id){
+  if(editing) commitEdit();
+  if(doc) saveNow();
+  const d=store.get(KEY_DOC+id); if(!d||!d.root) return false;
+  doc=fixDoc(d); undoStack=[]; redoStack=[]; selId=doc.root.id; selRel=null; focusId=null; relFrom=null; pendingDelete=null; hits=[];
+  render(); fit(); renderDocs(); store.set(KEY_LAST,id); renderInspector(true);
+  if(viewMode==="outline") renderOutline();
+  $("#stSave").className=""; $("#stSave").textContent="已載入";
+  if(matchMedia("(max-width:760px)").matches) $("#side").hidden=true;
+  return true;
+}
+function newDoc(d){
+  if(editing) commitEdit();
+  if(doc) saveNow();
+  doc=fixDoc(d); index.push({id:d.id,title:d.title,updated:d.updated,count:countAll(d.root)});
+  undoStack=[]; redoStack=[]; selId=doc.root.id; selRel=null; focusId=null; hits=[];
+  saveNow(); render(); fit(); renderInspector(true);
+  if(viewMode==="outline") renderOutline();
+  if(matchMedia("(max-width:760px)").matches) $("#side").hidden=true;
+}
+function deleteDoc(id){
+  store.del(KEY_DOC+id); index=index.filter(d=>d.id!==id); store.set(KEY_INDEX,index); pendingDelete=null;
+  if(doc.id===id){doc=null;if(index.length)openDoc(index.sort((a,b)=>b.updated-a.updated)[0].id);else newDoc(blankDoc())}
+  else renderDocs();
+}
+function closeModals(){$$(".modal").forEach(m=>m.hidden=true);if(stage&&viewMode==="map")stage.focus({preventScroll:true})}
+
+/* ================= 綁定（編輯器） ================= */
+function bindEditorUI(){
+  on("#docs","click",e=>{
+    const ask=e.target.closest("[data-delask]"),yes=e.target.closest("[data-delyes]"),no=e.target.closest("[data-delno]");
+    if(ask){e.stopPropagation();pendingDelete=ask.dataset.delask;renderDocs();return}
+    if(yes){e.stopPropagation();deleteDoc(yes.dataset.delyes);return}
+    if(no){e.stopPropagation();pendingDelete=null;renderDocs();return}
+    const li=e.target.closest("[data-doc]");if(li&&li.dataset.doc!==doc.id)openDoc(li.dataset.doc);
+  });
+  on("#bNew","click",()=>newDoc(blankDoc()));
+  on("#bSide","click",()=>{$("#side").hidden=!$("#side").hidden;requestAnimationFrame(applyView)});
+  on("#title","input",e=>{doc.title=e.target.value;scheduleSave()});
+  on("#title","keydown",e=>{if(e.key==="Enter"||e.key==="Escape"){e.preventDefault();stage.focus()}});
+  on("#title","blur",()=>{if(!doc.title.trim()){doc.title="未命名心智圖";updateUI();scheduleSave()}});
+  on("#bChild","click",()=>{if(viewMode!=="map")setView("map");addChild()});
+  on("#bSib","click",()=>{if(viewMode!=="map")setView("map");addSibling()});
+  on("#bDel","click",removeSel);
+  on("#bEdit","click",()=>{if(viewMode!=="map")setView("map");if(selId)startEdit(selId,{selectAll:true})});
+  on("#bUndo","click",undo); on("#bRedo","click",redo);
+  on("#bRel","click",()=>{if(relFrom)cancelRel();else startRel()});
+  on("#bBound","click",toggleBoundary); on("#bSum","click",toggleSummary);
+  on("#bFocus","click",()=>setFocus(focusId?null:selId));
+  $$("[data-layout]").forEach(b=>on(b,"click",()=>{if(doc.layout===b.dataset.layout)return;mutate(()=>{doc.layout=b.dataset.layout});if(viewMode!=="map")setView("map");fit()}));
+  $$("[data-view]").forEach(b=>on(b,"click",()=>setView(b.dataset.view)));
+  on("#bSearch","click",()=>$("#search").hidden?openSearch():closeSearch());
+  on("#bInsp","click",()=>inspOpen?closeInsp():openInsp(true));
+  on("#sQ","input",runSearch);
+  on("#sQ","keydown",e=>{if(e.key==="Enter"){e.preventDefault();nextHit(e.shiftKey?-1:1)}else if(e.key==="Escape"){e.preventDefault();closeSearch()}});
+  on("#sNext","click",()=>nextHit(1)); on("#sPrev","click",()=>nextHit(-1)); on("#sClose","click",closeSearch);
+  $$(".modal").forEach(m=>on(m,"click",e=>{if(e.target===m||e.target.closest("[data-close]"))closeModals()}));
+  on("#bHelp","click",()=>{$("#mHelp").hidden=false});
+  on("#bIO","click",()=>{$("#ioMsg1").textContent="";$("#ioMsg2").textContent="";$("#ioOut").hidden=true;$("#mIO").hidden=false});
+  $$("[data-exp]").forEach(b=>on(b,"click",()=>doExport(b.dataset.exp)));
+  const doImport=async txt=>{const msg=$("#ioMsg2");msg.className="msg";
+    try{const {doc:d,restored}=await importAny(txt);newDoc(d);closeModals();toast(restored?`已匯入，並還原 ${restored} 個附件`:"已匯入為新的心智圖")}
+    catch(err){msg.className="msg err";msg.textContent="無法讀取：請確認是織思的 JSON 備份，或是 Markdown／縮排文字大綱"}};
+  on("#ioImport","click",()=>{const t=$("#ioText").value.trim();if(t)doImport(t)});
+  on("#ioFile","change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>doImport(String(r.result));r.readAsText(f);e.target.value=""});
+  on("#bEmbed","click",()=>{$("#eMsg1").textContent="";$("#eMsg2").textContent="";$("#eCode").value="";$("#mEmbed").hidden=false});
+  on("#eCopySrc","click",async()=>{
+    const m=$("#eMsg1");m.className="msg";m.textContent="產生中…";
+    const html=await buildViewerHTML();
+    const code=`<iframe title="${esc(doc.title)}" srcdoc="${html.replace(/&/g,"&amp;").replace(/"/g,"&quot;")}" style="${iframeStyle()}" loading="lazy"></iframe>`;
+    $("#eCode").value=code;
+    await copyText(code,m,`已複製（約 ${Math.ceil(code.length/1024)} KB）${code.length>900000?"。內容較大，部分網站有長度限制，可改用方法二":""}`);
+  });
+  on("#eDl","click",async()=>{const m=$("#eMsg2");m.className="msg";m.textContent="產生中…";
+    const r=await saveFile(safeName(doc.title)+"_檢視器.html",await buildViewerHTML());
+    m.textContent=r==="saved"?"已下載，上傳後把網址填到下方":r==="declined"?"已取消下載":"這裡無法下載檔案"});
+  on("#eCopyUrl","click",()=>{const u=$("#eUrl").value.trim()||"https://你的網站/心智圖.html";
+    const code=`<iframe title="${esc(doc.title)}" src="${esc(u)}" style="${iframeStyle()}" loading="lazy"></iframe>`;$("#eCode").value=code;copyText(code,$("#eMsg2"),"已複製網址嵌入碼")});
+  on(stage,"dragover",e=>{if(!hasFiles(e))return;e.preventDefault();stage.classList.add("filedrag");const h=nodeAt(e.clientX,e.clientY);drawDrop(h?{id:h.id,mode:"child"}:null)});
+  on(stage,"dragleave",e=>{if(!stage.contains(e.relatedTarget)){stage.classList.remove("filedrag");$("#overlay").innerHTML=""}});
+  on(stage,"drop",e=>{if(!hasFiles(e))return;e.preventDefault();stage.classList.remove("filedrag");$("#overlay").innerHTML="";
+    const h=nodeAt(e.clientX,e.clientY),id=h?h.id:(selId||doc.root.id);selId=id;selRel=null;attachFiles(id,[...e.dataTransfer.files])});
+  on(document,"paste",e=>{
+    const a=document.activeElement; if(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA")||viewMode!=="map"||anyModal()) return;
+    const cd=e.clipboardData; if(!cd) return;
+    const files=[...(cd.files||[])];
+    if(files.length){e.preventDefault();attachFiles(selId||doc.root.id,files);return}
+    const txt=(cd.getData("text/plain")||"").trim();
+    if(clip&&(clipText===null||txt===clipText||!txt)){e.preventDefault();pasteNodes([reid(clone(clip))]);return}
+    if(txt){e.preventDefault();pasteNodes(parseText(txt))}
+  });
+  $$(".bar .btn,.seg button,.zoom button").forEach(b=>on(b,"mousedown",e=>e.preventDefault()));
+  bindInspector(); bindOutline();
+}
+function bindZoom(){
+  on("#zIn","click",()=>zoomCenter(1.2)); on("#zOut","click",()=>zoomCenter(1/1.2));
+  on("#zFit","click",fit); on("#zPct","click",()=>zoomCenter(1/view.k));
+}
+
+/* ================= 啟動 ================= */
+function boot(){
+  if(VIEWER){
+    document.body.innerHTML=VIEWER_MARKUP;
+    if(!EMBED||!EMBED.doc){document.body.textContent="無法讀取心智圖資料";return}
+  }
+  $("#svg").innerHTML=SVG_INNER;
+  stage=$("#stage");
+  stage.insertAdjacentHTML("beforeend",PEEK_HTML+(VIEWER?"":CTX_HTML));
+  bindPeek();
+  if(VIEWER){
+    doc=fixDoc(Object.assign({id:"embed"},EMBED.doc));
+    bindPointer(); bindZoom(); on(document,"keydown",onKey);
+    on("#vcard","click",e=>{if(e.target.closest("[data-vclose]"))$("#vcard").hidden=true;const b=e.target.closest("[data-vpeek]");if(b)openPeek(b.dataset.pn,b.dataset.vpeek,b.getBoundingClientRect())});
+    render(); fit();
+    new ResizeObserver(()=>{fit();if(peek)setBox($("#peek"),peekTarget())}).observe(stage);
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{mcache.clear();render();fit()});
+    return;
+  }
+  if(matchMedia("(max-width:760px)").matches) $("#side").hidden=true;
+  bindPointer(); bindZoom(); bindEditorUI(); bindCtx(); on(document,"keydown",onKey);
+  index=index.filter(d=>d&&d.id);
+  const last=store.get(KEY_LAST); let ok=false;
+  if(last&&index.some(d=>d.id===last)) ok=openDoc(last);
+  if(!ok&&index.length) ok=openDoc(index[0].id);
+  if(!ok){index=[];newDoc(sampleDoc())}
+  const pref=store.get(KEY_INSP);
+  if(pref===true||(pref===null&&matchMedia("(min-width:1280px)").matches)){openInsp(true);requestAnimationFrame(fit)}
+  if(!saveOK){$("#stSave").className="warn";$("#stSave").textContent="瀏覽器不允許儲存，請記得匯出備份"}
+  setTimeout(()=>{$("#hint").hidden=true},10000);
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{mcache.clear();render()});
+  new ResizeObserver(()=>{applyView();if(peek)setBox($("#peek"),peekTarget())}).observe(stage);
+  on(window,"beforeunload",()=>{if(doc)saveNow()});
+  on(document,"visibilitychange",()=>{if(document.hidden&&doc)saveNow()});
+  try{if(window.claude&&window.claude.use)window.claude.use("downloads").then(d=>{downloads=d}).catch(()=>{})}catch(e){}
+  idbOpen().catch(()=>{idbOK=false});
+  stage.focus({preventScroll:true});
+}
+boot();
+})();
+</script>
+
+</body></html>
