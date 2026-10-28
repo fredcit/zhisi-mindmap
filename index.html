@@ -237,6 +237,16 @@ button.ocar:hover{background:var(--surface-2);color:var(--fg)}
 .vbar{display:flex;align-items:center;gap:8px;background:var(--surface);border-bottom:1px solid var(--line);padding:6px 10px}
 .vtitle{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .vapp .zoom{margin-left:0}
+.vbadge{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:1px 8px;white-space:nowrap;flex:none}
+.vzoom{position:absolute;right:12px;bottom:12px;z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:4px}
+.vzoom .zoom{gap:2px}
+.vzoom .btn{padding:7px}
+.vzoom .btn svg{width:18px;height:18px}
+.vzoom .zpct{min-width:54px;font-size:12.5px}
+.vhint{position:absolute;left:50%;transform:translateX(-50%);top:12px;z-index:4;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--muted);box-shadow:var(--shadow);white-space:nowrap;pointer-events:none;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+@media (max-width:600px){.vcard{bottom:72px;max-height:55%}}
+.share-link{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.share-link input{flex:1;min-width:220px}
 .vcard{position:absolute;left:12px;bottom:12px;z-index:6;width:min(340px,calc(100% - 24px));max-height:70%;overflow:auto;background:var(--surface);
   border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:12px 14px;font-size:13px;line-height:1.65;box-sizing:border-box}
 .vcard h4{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;gap:8px}
@@ -329,7 +339,9 @@ button.ocar:hover{background:var(--surface-2);color:var(--fg)}
     </div>
     <button class="btn" id="bSearch" title="搜尋 (⌘/Ctrl+F)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button>
     <button class="btn" id="bInsp" title="屬性面板"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16M17.5 8.5h1M17.5 12h1"/></svg><span class="lbl2">屬性</span></button>
-    <button class="btn" id="bIO" title="匯出／匯入"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span class="lbl2">匯出</span></button>
+    <button class="btn" id="bIO" title="匯出"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span class="lbl2">匯出</span></button>
+    <button class="btn" id="bImp" title="匯入"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg><span class="lbl2">匯入</span></button>
+    <button class="btn" id="bShare" title="分享唯讀連結"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span class="lbl2">分享</span></button>
     <button class="btn" id="bEmbed" title="嵌入網頁（iframe）"><svg viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 6l-3 12"/></svg><span class="lbl2">嵌入</span></button>
     <button class="btn" id="bHelp" title="快捷鍵"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17h.01"/></svg></button>
   </header>
@@ -378,8 +390,8 @@ button.ocar:hover{background:var(--surface-2);color:var(--fg)}
 
 <div class="modal" id="mIO" hidden>
   <div class="panel" role="dialog" aria-labelledby="ioT">
-    <h3 id="ioT">匯出／匯入</h3>
-    <p class="sub">圖片、SVG 與 PDF 會照畫面上目前的展開狀態與配色輸出。JSON 是完整備份，可以搬到另一台電腦。</p>
+    <h3 id="ioT">匯出</h3>
+    <p class="sub">圖片、SVG 與 PDF 會照畫面上目前的展開狀態與配色輸出。JSON 是完整備份，可以用「匯入」搬到另一台電腦。</p>
     <h4>匯出</h4>
     <div class="fmts">
       <button class="fmt" data-exp="png"><b>PNG 圖片</b><span>高解析度，可貼進簡報</span></button>
@@ -393,7 +405,13 @@ button.ocar:hover{background:var(--surface-2);color:var(--fg)}
     </div>
     <div class="row" style="margin-top:6px"><span class="msg" id="ioMsg1"></span></div>
     <textarea id="ioOut" hidden readonly aria-label="匯出內容"></textarea>
-    <h4>匯入</h4>
+    <div class="close-row"><button class="btn" data-close>關閉</button></div>
+  </div>
+</div>
+
+<div class="modal" id="mImp" hidden>
+  <div class="panel" role="dialog" aria-labelledby="impT">
+    <h3 id="impT">匯入</h3>
     <p class="sub">可匯入織思的 JSON 備份，或 Markdown、縮排文字大綱（每行一個主題，用縮排或 # 標題表示層級）。</p>
     <div class="row" style="margin-bottom:8px">
       <label class="btn" for="ioFile" style="border-color:var(--line)">選擇檔案…</label>
@@ -405,6 +423,27 @@ button.ocar:hover{background:var(--surface-2);color:var(--fg)}
       <button class="btn" id="ioImport">匯入為新的心智圖</button>
       <span class="msg" id="ioMsg2"></span>
     </div>
+    <div class="close-row"><button class="btn" data-close>關閉</button></div>
+  </div>
+</div>
+
+<div class="modal" id="mShare" hidden>
+  <div class="panel" role="dialog" aria-labelledby="shT">
+    <h3 id="shT">分享唯讀連結</h3>
+    <p class="sub">產生一個網址，對方用瀏覽器打開就能看這份心智圖，可以放大縮小、移動、收合分支、點主題看備註，但不能修改。不需要登入，也不需要安裝。</p>
+    <div class="opts">
+      <label>外觀 <select id="shTheme"><option value="auto">跟隨讀者系統</option><option value="light">固定淺色</option><option value="dark">固定深色</option></select></label>
+      <label><input type="checkbox" id="shCollapse" checked> 讀者可收合分支</label>
+    </div>
+    <h4>連結</h4>
+    <div class="share-link"><input type="text" id="shUrl" readonly aria-label="分享連結"><button class="btn primary" id="shCopy">複製連結</button><a class="btn" id="shOpen" href="#" target="_blank" rel="noopener">開啟預覽</a></div>
+    <p class="msg" id="shMsg" style="margin-top:8px"></p>
+    <h4>注意</h4>
+    <p class="sub" style="margin:0">• 連結裡存的是「現在」的內容快照。之後修改心智圖，要重新產生連結再傳一次。<br>• 附件檔案太大，不會放進連結，讀者只會看到附件的檔名。需要讓讀者看附件，請用「嵌入」產生檢視器檔案。<br>• 內容都在網址本身，不會上傳到任何伺服器；拿到連結的人都能看到內容。</p>
+    <details style="margin-top:14px;font-size:13px"><summary style="cursor:pointer;color:var(--muted)">進階：連結使用的網址</summary>
+      <p class="sub" style="margin:8px 0">讀者會打開這個網址上的織思。預設是你的 GitHub Pages。</p>
+      <input type="url" id="shBase" style="width:100%;box-sizing:border-box" aria-label="織思網址">
+    </details>
     <div class="close-row"><button class="btn" data-close>關閉</button></div>
   </div>
 </div>
@@ -469,17 +508,19 @@ const pad2=n=>String(n).padStart(2,"0");
 const isMac=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent), MK=isMac?"⌘":"Ctrl+";
 const FAMILY='"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif';
 const embedEl=document.getElementById("embed-data");
-const VIEWER=!!embedEl;
+const HASHV=/^#view=/.test(location.hash);
+const VIEWER=!!embedEl||HASHV;
 let EMBED=null;
-if(VIEWER){try{EMBED=JSON.parse(embedEl.textContent)}catch(e){EMBED=null}}
-const VOPT=(EMBED&&EMBED.opts)||{};
+if(embedEl){try{EMBED=JSON.parse(embedEl.textContent)}catch(e){EMBED=null}}
+let VOPT=(EMBED&&EMBED.opts)||{};
+const DEFAULT_SHARE_BASE="https://fredcit.github.io/zhisi-mindmap/";
 const IN_ARTIFACT=!!(window.claude&&window.claude.use);
 
 const SVG_INNER='<defs><marker id="zsArrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="var(--rel)"/></marker></defs><g id="world"><g id="bounds"></g><g id="edges"></g><g id="nodes"></g><g id="sums"></g><g id="rels"></g><g id="overlay"></g></g>';
 const ZOOM_HTML='<div class="zoom"><button class="btn" id="zOut" title="縮小"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><button class="zpct" id="zPct" title="重設為 100%">100%</button><button class="btn" id="zIn" title="放大"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button class="btn" id="zFit" title="符合畫面"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>';
 const PEEK_HTML='<div class="peek-bg" id="peekBg" hidden></div><div class="peek" id="peek" hidden role="dialog" aria-label="附件預覽"><div class="pk-head"><span class="pk-tile" id="pkTile"></span><div class="pk-t"><b id="pkName"></b><span id="pkMeta"></span></div><button class="btn" id="pkPrev" title="上一個附件 (←)"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><button class="btn" id="pkNext" title="下一個附件 (→)"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button><button class="btn" id="pkDl" title="下載"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span class="lbl2">下載</span></button><button class="btn" id="pkClose" title="關閉 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="pk-body" id="pkBody"></div></div>';
 const CTX_HTML='<div class="ctx" id="ctx" hidden role="menu"></div><input type="file" id="ctxFile" multiple hidden>';
-const VIEWER_MARKUP='<div class="vapp"><header class="vbar"><span class="vtitle" id="vTitle"></span><span class="grow"></span>'+ZOOM_HTML+'</header><div class="stage" id="stage"><svg id="svg" aria-label="心智圖"></svg><div class="crumb" id="crumb" hidden></div><div class="vcard" id="vcard" hidden></div></div></div>';
+const VIEWER_MARKUP='<div class="vapp"><header class="vbar"><span class="vtitle" id="vTitle"></span><span class="vbadge">唯讀</span><span class="grow"></span></header><div class="stage" id="stage"><svg id="svg" aria-label="心智圖"></svg><div class="crumb" id="crumb" hidden></div><div class="vhint" id="vhint">拖曳移動・雙指或 '+(/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent)?"⌘":"Ctrl")+'＋滾輪縮放・點主題看詳細</div><div class="vzoom">'+ZOOM_HTML+'</div><div class="vcard" id="vcard" hidden></div></div></div>';
 
 /* ================= 配色主題 ================= */
 const THEMES={
@@ -1209,7 +1250,7 @@ function cancelRel(){relFrom=null;$("#relhint").hidden=true;stage.classList.remo
 function bindPointer(){
   stage.tabIndex=0;
   on(stage,"pointerdown",e=>{
-    if(e.target===ed||e.target.closest(".crumb,.search,.vcard,.relhint,.toast,.ctx,.peek,.peek-bg")) return;
+    if(e.target===ed||e.target.closest(".crumb,.search,.vcard,.vzoom,.relhint,.toast,.ctx,.peek,.peek-bg")) return;
     if(e.target.closest("a")) return;
     if(editing) commitEdit();
     if(e.button===2){
@@ -1354,9 +1395,9 @@ function onKey(e){
     if(k.startsWith("Arrow")){e.preventDefault();navigate(k)}
     else if(k===" "&&selId&&VOPT.collapse!==false){e.preventDefault();toggle(selId)}
     else if(k==="Escape"){showCard(null);selId=null;render()}
-    else if(mod&&(k==="="||k==="+")){e.preventDefault();zoomCenter(1.2)}
-    else if(mod&&k==="-"){e.preventDefault();zoomCenter(1/1.2)}
-    else if(mod&&k==="0"){e.preventDefault();fit()}
+    else if(k==="="||k==="+"){e.preventDefault();zoomCenter(1.2)}
+    else if(k==="-"){e.preventDefault();zoomCenter(1/1.2)}
+    else if(k==="0"){e.preventDefault();fit()}
     return;
   }
   if(mod&&kl==="f"){e.preventDefault();openSearch();return}
@@ -1768,6 +1809,49 @@ function showCard(id){
   c.hidden=false;
 }
 
+/* ================= 分享連結 ================= */
+const b64u={
+  enc(u){let s="";for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")},
+  dec(t){t=t.replace(/-/g,"+").replace(/_/g,"/");while(t.length%4)t+="=";const b=atob(t),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+};
+async function packShare(obj){
+  const raw=new TextEncoder().encode(JSON.stringify(obj));
+  if(window.CompressionStream){try{const st=new Blob([raw]).stream().pipeThrough(new CompressionStream("deflate-raw"));return"z"+b64u.enc(new Uint8Array(await new Response(st).arrayBuffer()))}catch(e){}}
+  return"j"+b64u.enc(raw);
+}
+async function unpackShare(t){
+  t=decodeURIComponent(t).trim(); let u=b64u.dec(t.slice(1));
+  if(t[0]==="z"){const st=new Blob([u]).stream().pipeThrough(new DecompressionStream("deflate-raw"));u=new Uint8Array(await new Response(st).arrayBuffer())}
+  return JSON.parse(new TextDecoder().decode(u));
+}
+function shareData(){
+  // 只放結構與文字；縮短 id，附件只留檔名
+  let k=0,fk=0; const idMap={};
+  const walk=n=>{const id=(k++).toString(36);idMap[n.id]=id;
+    const o={id,text:n.text,children:n.children.map(walk)};
+    if(n.collapsed)o.collapsed=true; if(n.style)o.style=n.style; if(n.icons)o.icons=n.icons; if(n.note)o.note=n.note; if(n.link)o.link=n.link;
+    if(n.boundary)o.boundary=n.boundary; if(n.summary)o.summary=n.summary;
+    if(n.files&&n.files.length)o.files=n.files.map(f=>({id:"f"+(fk++).toString(36),name:f.name,size:f.size,type:f.type}));
+    return o};
+  const root=walk(doc.root);
+  const rels=doc.rels.filter(r=>idMap[r.from]&&idMap[r.to]).map(r=>({id:"r",from:idMap[r.from],to:idMap[r.to],label:r.label||""})).map((r,i)=>(r.id="r"+i,r));
+  return{doc:{title:doc.title,layout:doc.layout,theme:doc.theme,root,rels},opts:{theme:$("#shTheme").value,collapse:$("#shCollapse").checked},shared:true};
+}
+function shareBase(){
+  let b=($("#shBase").value||"").trim()||DEFAULT_SHARE_BASE;
+  return b.split("#")[0];
+}
+async function makeShareLink(){
+  const msg=$("#shMsg"); msg.className="msg"; msg.textContent="產生中…";
+  store.set("zhisi.shareBase",$("#shBase").value.trim());
+  const url=shareBase()+"#view="+await packShare(shareData());
+  $("#shUrl").value=url; $("#shOpen").href=url;
+  const L=url.length;
+  msg.textContent=L>8000?`連結長度 ${L.toLocaleString()} 字元，偏長。用 LINE、Email 傳送時可能被截斷，建議改用「嵌入」產生檢視器檔案。`:`連結長度 ${L.toLocaleString()} 字元，可以直接傳送。`;
+  if(L>8000) msg.className="msg err";
+  return url;
+}
+
 /* ================= 附件預覽（原地放大） ================= */
 let peek=null, peekToken=0;
 function peekTarget(){const r=stageRect(),W=Math.max(200,Math.min(r.width-24,1000)),H=Math.max(200,r.height-24);return{left:(r.width-W)/2,top:12,width:W,height:H}}
@@ -1807,7 +1891,7 @@ async function fillPeek(){
   $("#pkPrev").hidden=L<2; $("#pkNext").hidden=L<2;
   body.scrollTop=0; body.innerHTML=`<div class="pk-load">載入中…</div>`;
   const blob=await getBlob(f.id); if(!live()) return;
-  if(!blob){body.innerHTML=emptyHTML(f,VIEWER?"作者沒有把這個附件內嵌到檢視器中。":"這個附件不在目前的瀏覽器中。請在原本的電腦匯出含附件的 JSON 備份，再到這裡匯入。",false);return}
+  if(!blob){body.innerHTML=emptyHTML(f,VIEWER?(EMBED&&EMBED.shared?"分享連結只包含附件的檔名，不包含檔案本身。":"作者沒有把這個附件內嵌到檢視器中。"):"這個附件不在目前的瀏覽器中。請在原本的電腦匯出含附件的 JSON 備份，再到這裡匯入。",false);return}
   try{
     if(k==="img"){
       const url=fileUrl(f.id)||URL.createObjectURL(blob);
@@ -2008,7 +2092,17 @@ function bindEditorUI(){
   on("#sNext","click",()=>nextHit(1)); on("#sPrev","click",()=>nextHit(-1)); on("#sClose","click",closeSearch);
   $$(".modal").forEach(m=>on(m,"click",e=>{if(e.target===m||e.target.closest("[data-close]"))closeModals()}));
   on("#bHelp","click",()=>{$("#mHelp").hidden=false});
-  on("#bIO","click",()=>{$("#ioMsg1").textContent="";$("#ioMsg2").textContent="";$("#ioOut").hidden=true;$("#mIO").hidden=false});
+  on("#bIO","click",()=>{$("#ioMsg1").textContent="";$("#ioOut").hidden=true;$("#mIO").hidden=false});
+  on("#bImp","click",()=>{$("#ioMsg2").textContent="";$("#mImp").hidden=false});
+  on("#bShare","click",()=>{
+    const saved=store.get("zhisi.shareBase");
+    $("#shBase").value=saved||(!IN_ARTIFACT&&/^https?:/.test(location.protocol)?location.origin+location.pathname:DEFAULT_SHARE_BASE);
+    $("#shUrl").value="";$("#mShare").hidden=false;makeShareLink();
+  });
+  ["#shTheme","#shCollapse","#shBase"].forEach(sel=>on(sel,"change",makeShareLink));
+  on("#shCopy","click",async()=>{const url=$("#shUrl").value||await makeShareLink(),m=$("#shMsg");
+    try{await navigator.clipboard.writeText(url);m.className="msg";m.textContent="已複製連結，可以貼給別人了"}
+    catch(e){const i=$("#shUrl");i.focus();i.select();m.className="msg";m.textContent="已選取連結，請按 "+MK+"C 複製"}});
   $$("[data-exp]").forEach(b=>on(b,"click",()=>doExport(b.dataset.exp)));
   const doImport=async txt=>{const msg=$("#ioMsg2");msg.className="msg";
     try{const {doc:d,restored}=await importAny(txt);newDoc(d);closeModals();toast(restored?`已匯入，並還原 ${restored} 個附件`:"已匯入為新的心智圖")}
@@ -2050,10 +2144,18 @@ function bindZoom(){
 }
 
 /* ================= 啟動 ================= */
-function boot(){
+async function boot(){
+  if(HASHV&&!embedEl){
+    try{EMBED=await unpackShare(location.hash.slice(6));EMBED.files={};EMBED.thumbs={};VOPT=EMBED.opts||{};
+      if(VOPT.theme==="light"||VOPT.theme==="dark") document.documentElement.setAttribute("data-theme",VOPT.theme);}
+    catch(e){EMBED=null}
+  }
   if(VIEWER){
-    document.body.innerHTML=VIEWER_MARKUP;
-    if(!EMBED||!EMBED.doc){document.body.textContent="無法讀取心智圖資料";return}
+    // 只移除編輯介面，保留樣式（網頁的 <style> 可能放在 body 裡）
+    [...document.body.children].forEach(el=>{if(!/^(STYLE|LINK|TITLE|SCRIPT|META)$/.test(el.tagName))el.remove()});
+    document.body.insertAdjacentHTML("beforeend",VIEWER_MARKUP);
+    if(!EMBED||!EMBED.doc){$(".vapp").innerHTML='<div style="padding:40px 20px;text-align:center;line-height:1.8;color:var(--fg)"><b>無法讀取這個心智圖</b><br>連結可能不完整（例如傳送時被截斷），請向分享者索取完整的連結。</div>';return}
+    document.title=EMBED.doc.title||document.title;
   }
   $("#svg").innerHTML=SVG_INNER;
   stage=$("#stage");
@@ -2064,7 +2166,13 @@ function boot(){
     bindPointer(); bindZoom(); on(document,"keydown",onKey);
     on("#vcard","click",e=>{if(e.target.closest("[data-vclose]"))$("#vcard").hidden=true;const b=e.target.closest("[data-vpeek]");if(b)openPeek(b.dataset.pn,b.dataset.vpeek,b.getBoundingClientRect())});
     render(); fit();
-    new ResizeObserver(()=>{fit();if(peek)setBox($("#peek"),peekTarget())}).observe(stage);
+    let firstFit=true;
+    new ResizeObserver(()=>{if(firstFit){fit();}else applyView();if(peek)setBox($("#peek"),peekTarget())}).observe(stage);
+    setTimeout(()=>{firstFit=false},800);
+    on(window,"hashchange",()=>location.reload());
+    const hideHint=()=>{const h=$("#vhint");if(h)h.hidden=true};
+    setTimeout(hideHint,7000); on(stage,"pointerdown",hideHint); on(stage,"wheel",hideHint);
+    on(stage,"dblclick",e=>{if(e.target.closest(".node,.vcard,.peek,.vzoom,[data-thumb]"))return;const r=stageRect();zoomAt(view.k*1.6,e.clientX-r.left,e.clientY-r.top)});
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{mcache.clear();render();fit()});
     return;
   }
@@ -2085,6 +2193,7 @@ function boot(){
   on(document,"visibilitychange",()=>{if(document.hidden&&doc)saveNow()});
   try{if(window.claude&&window.claude.use)window.claude.use("downloads").then(d=>{downloads=d}).catch(()=>{})}catch(e){}
   idbOpen().catch(()=>{idbOK=false});
+  on(window,"hashchange",()=>{if(/^#view=/.test(location.hash))location.reload()});
   stage.focus({preventScroll:true});
 }
 boot();
